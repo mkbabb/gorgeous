@@ -1,0 +1,20 @@
+[package]
+name = "prettify"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Grammar-driven pretty printers auto-generated from BBNF grammars"
+rust-version = "1.85"
+
+[dependencies]
+parse_that = { version = "0.1.0", path = "/Users/mkbabb/Programming/parse-that/rust/parse_that" }
+bbnf_derive = { version = "0.1.0", path = "/Users/mkbabb/Programming/bbnf-lang/rust/bbnf-derive" }
+bbnf = { version = "0.1.0", path = "/Users/mkbabb/Programming/bbnf-lang/rust/bbnf" }
+pprint = { version = "0.3.0", path = "/Users/mkbabb/Programming/pprint" }
+
+[dev-dependencies]
+bencher = "0.1"
+
+[[bench]]
+name = "prettify"
+harness = false
