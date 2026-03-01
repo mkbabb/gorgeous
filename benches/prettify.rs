@@ -155,6 +155,39 @@ fn bench_json_canada_cached(b: &mut Bencher) {
     });
 }
 
+// ── CSS phase-split benchmarks (parse vs to_doc vs render) ──────────────────
+
+fn bench_css_app_parse_only(b: &mut Bencher) {
+    let input = load_css_app();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_css_app_to_doc_only(b: &mut Bencher) {
+    let input = load_css_app();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_css_app_render_only(b: &mut Bencher) {
+    let input = load_css_app();
+    let config = PrinterConfig::default();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        render(doc.clone(), Some(config.to_printer()))
+    });
+}
+
 // ── Groups ───────────────────────────────────────────────────────────────────
 
 benchmark_group!(
@@ -185,4 +218,12 @@ benchmark_group!(
     bench_css_app_cached,
 );
 
-benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches);
+benchmark_group!(
+    css_phase_benches,
+    bench_css_app_parse_only,
+    bench_css_app_to_doc_only,
+    bench_css_app_render_only,
+);
+
+benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches);
+
