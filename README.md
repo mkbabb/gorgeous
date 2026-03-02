@@ -36,6 +36,26 @@ let formatted = prettify_json_range(input, 100..200, &config);
 
 All 28 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
 
+## CLI
+
+Built-in languages auto-detect by extension; arbitrary languages JIT-compile from
+any `.bbnf` grammar.
+
+```bash
+gorgeous input.json                        # built-in, auto-detect by extension
+gorgeous --lang css input.css              # built-in, explicit language
+gorgeous --grammar my.bbnf input.txt       # JIT: any grammar, instant prettifier
+gorgeous --grammar my.bbnf -r expr in.txt  # JIT with explicit entry rule
+echo '{}' | gorgeous --lang json           # stdin
+gorgeous input.css -o output.css           # write to file
+gorgeous -w 120 -i 2 input.json            # custom width + indent
+gorgeous --clear-cache                     # purge JIT cache
+```
+
+The JIT pipeline parses the `.bbnf`, generates a Cargo project with
+`#[derive(Parser, prettify)]`, compiles it once, and caches the binary by content
+hash in `~/.cache/gorgeous/`. Second run is instant.
+
 ## Architecture
 
 ```
