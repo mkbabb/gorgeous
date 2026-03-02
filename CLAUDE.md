@@ -45,9 +45,20 @@ JIT pipeline: parse `.bbnf` → extract rules → generate temp Cargo project wi
 `#[derive(Parser, prettify)]` → `cargo build --release` → cache binary by
 content hash in `~/.cache/gorgeous/<hash>/` → exec. Second run is instant.
 
+## Dependency Graph
+
+```
+pprint_derive → pprint → parse_that → bbnf → bbnf_derive
+                                                  ↓
+                                              gorgeous  ← all of the above
+```
+
+gorgeous is the leaf of the Rust crate graph — depends on everything.
+Cargo.toml uses crates.io version-only deps; local dev via `.cargo/config.toml` `[patch.crates-io]`.
+
 ## Dependencies
 
-Path deps (local dev) / registry deps (crates.io):
+All from crates.io:
 
 - `parse_that` — parser combinator library
 - `bbnf_derive` — proc-macro: `#[derive(Parser)]` from `.bbnf` files
