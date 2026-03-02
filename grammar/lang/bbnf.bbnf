@@ -51,3 +51,4 @@ grammar = ( comment ? , ( import_directive | recover_directive | pretty_directiv
 @pretty grammar block ;
 @pretty rule group ;
 @pretty alternation group ;
+@pretty concatenation group ;

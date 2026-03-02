@@ -12,4 +12,8 @@ array = "[" >> (( value << comma ? ) *)?w << "]" ;
 pair = string, colon >> value ;
 object = "{" >> (( pair << comma ? ) *)?w << "}" ;
 
-value = object | array | string | number | bool | null ;   
+value = object | array | string | number | bool | null ;
+
+@pretty object group ;
+@pretty array group ;
+@pretty pair group ;

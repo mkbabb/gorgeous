@@ -9,13 +9,13 @@ CLI with built-in languages + JIT compilation from arbitrary `.bbnf` grammars.
 src/
   lib.rs               # PrinterConfig, ToDoc + SourceRange traits, range_to_doc()
   main.rs              # CLI binary — built-in languages + JIT grammar pipeline
-  json.rs              # JSON prettifier — 7 tests, range formatting
+  json.rs              # JSON prettifier — 9 tests, range formatting
   ebnf.rs              # EBNF prettifier — 4 tests, idempotent multi-rule
   bnf.rs               # BNF prettifier — 5 tests, idempotent multi-rule
   bbnf.rs              # BBNF prettifier — 5 tests, idempotent multi-rule
-  css.rs               # CSS prettifier — 7 tests, nested rules, media queries
+  css.rs               # CSS prettifier — 8 tests, nested rules, media queries
 benches/
-  prettify.rs          # 12 benchmarks: JSON (6) + CSS (6)
+  gorgeous.rs          # 12 benchmarks: JSON (6) + CSS (6)
 data/json/             # benchmark datasets (data.json 35KB, canada.json 2.2MB)
 data/css/              # benchmark datasets (normalize.css 1.8KB, app.css 6.3KB)
 ```
@@ -24,21 +24,21 @@ data/css/              # benchmark datasets (normalize.css 1.8KB, app.css 6.3KB)
 
 ```bash
 cargo test --lib
-cargo build                        # binary: target/debug/gorgeous
-cargo bench --bench prettify
+cargo build                        # binary: target/debug/gorg
+cargo bench --bench gorgeous
 cargo clippy -- -D warnings
 ```
 
 ## CLI
 
 ```bash
-gorgeous input.json                                    # built-in, auto-detect
-gorgeous --lang css input.css                          # built-in, explicit
-gorgeous --grammar my.bbnf input.txt                   # JIT from grammar
-gorgeous --grammar my.bbnf --rule expr input.txt       # JIT, explicit entry rule
-echo '{}' | gorgeous --lang json                       # stdin
-gorgeous input.json -o output.json                     # write to file
-gorgeous --clear-cache                                 # purge JIT cache
+gorg input.json                                        # built-in, auto-detect
+gorg --lang css input.css                              # built-in, explicit
+gorg --grammar my.bbnf input.txt                       # JIT from grammar
+gorg --grammar my.bbnf --rule expr input.txt           # JIT, explicit entry rule
+echo '{}' | gorg --lang json                           # stdin
+gorg input.json -o output.json                         # write to file
+gorg --clear-cache                                     # purge JIT cache
 ```
 
 JIT pipeline: parse `.bbnf` → extract rules → generate temp Cargo project with
@@ -69,29 +69,29 @@ Dev: `bencher` (harness for `[[bench]]`).
 
 ## Languages
 
-All five built-in, all tests pass (28 total):
+All five built-in, all tests pass (31 total):
 
-- JSON — 7 tests, range formatting via `prettify_json_range()`
+- JSON — 9 tests, range formatting via `prettify_json_range()`
 - EBNF — 4 tests, idempotent multi-rule
 - BNF — 5 tests, idempotent multi-rule
 - BBNF — 5 tests, idempotent multi-rule
-- CSS — 7 tests, nested rules, media queries, `css-stylesheet-pretty.bbnf`
+- CSS — 8 tests, nested rules, media queries, `css-stylesheet-pretty.bbnf`
 
 ## Benchmark Throughput
 
 | Benchmark | Throughput |
 |-----------|-----------|
-| JSON data.json cached | ~119 MB/s |
-| JSON canada.json cached | ~53 MB/s |
-| CSS normalize.css cached | ~22 MB/s |
-| CSS app.css cached | ~22 MB/s |
-| CSS app.css to_doc only | ~117 MB/s |
-| CSS app.css render only | ~93 MB/s |
+| JSON data.json cached | ~97 MB/s |
+| JSON canada.json cached | ~42 MB/s |
+| CSS normalize.css cached | ~23 MB/s |
+| CSS app.css cached | ~23 MB/s |
+| CSS app.css to_doc only | ~114 MB/s |
+| CSS app.css render only | ~86 MB/s |
 
 ## Conventions
 
 - Edition 2024, nightly required (`#![feature(cold_path)]`)
-- Crate name `gorgeous`, lib name `gorgeous`, binary name `gorgeous`
+- Crate name `gorgeous`, lib name `gorgeous`, binary name `gorg`
 - Each language module: `#[derive(Parser)]` + `impl ToDoc` + `impl SourceRange` + `prettify_X()` entry point
 - Grammar files bundled in `grammar/` — `@pretty` directives control doc generation
 - CSS grammar: `css-stylesheet-pretty.bbnf` (standalone, no imports)

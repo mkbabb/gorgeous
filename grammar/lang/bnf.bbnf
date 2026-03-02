@@ -11,6 +11,7 @@ lhs = nonterminal ;
 rule = lhs , /[ \t]*/ , "::=" , /[ \t]*/ , rhs , /[ \t]*/ , /\n/ ? ;
 grammar = (rule ?w)* ;
 
-@pretty grammar block ;
-@pretty rule group ;
-@pretty alternation group ;
+@pretty grammar off ;
+@pretty rule off ;
+@pretty alternation off ;
+@pretty expression off ;

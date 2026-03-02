@@ -1,6 +1,6 @@
 [package]
 name = "gorgeous"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 license = "MIT"
 description = "Grammar-driven pretty printers auto-generated from BBNF grammars"
@@ -10,7 +10,7 @@ keywords = ["formatter", "pretty-printer", "bbnf", "grammar", "code-formatting"]
 categories = ["command-line-utilities", "text-processing", "development-tools"]
 
 [[bin]]
-name = "gorgeous"
+name = "gorg"
 path = "src/main.rs"
 
 [lib]
@@ -27,5 +27,5 @@ pprint = "0.3.1"
 bencher = "0.1"
 
 [[bench]]
-name = "prettify"
+name = "gorgeous"
 harness = false

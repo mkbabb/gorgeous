@@ -113,6 +113,18 @@ mod tests {
     }
 
     #[test]
+    fn test_css_formatting_output() {
+        let config = PrinterConfig::default();
+        // Spaced CSS should produce properly formatted output
+        let input = "html { line-height: 1.15; } body { margin: 0 }";
+        let result = prettify_css(input, &config).unwrap();
+        // Rules should be separated by blank lines
+        assert!(result.contains("\n\n"), "top-level rules should have blank line separation");
+        // Declarations should be indented
+        assert!(result.contains("    line-height"), "declarations should be indented");
+    }
+
+    #[test]
     fn test_prettify_no_trailing_semicolon() {
         let config = PrinterConfig::default();
         let input = "body{color:red}";

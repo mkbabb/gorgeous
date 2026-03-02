@@ -93,6 +93,30 @@ mod tests {
     }
 
     #[test]
+    fn test_nested_json_output() {
+        let config = PrinterConfig::default();
+        let input = r#"{"users": [{"id": 1, "name": "Alice", "email": "alice@example.com", "active": true}, {"id": 2, "name": "Bob", "email": "bob@example.com", "active": false}], "total": 2, "page": 1}"#;
+        let result = prettify_json(input, &config).unwrap();
+        // Each object in the array should be on its own line
+        assert!(result.contains("},\n"),
+            "Objects in array should be on separate lines:\n{}", result);
+        // Verify idempotency
+        let second = prettify_json(&result, &config).unwrap();
+        assert_eq!(result, second, "nested JSON prettify should be idempotent");
+    }
+
+    #[test]
+    fn test_json_formatting_samples() {
+        let config = PrinterConfig::default();
+        // Short objects stay inline
+        let simple = prettify_json(r#"{"a": 1, "b": 2}"#, &config).unwrap();
+        assert_eq!(simple.trim(), r#"{"a": 1, "b": 2}"#);
+        // Deeply nested small objects stay inline
+        let deep = prettify_json(r#"{"a": {"b": {"c": {"d": 1}}}}"#, &config).unwrap();
+        assert_eq!(deep.trim(), r#"{"a": {"b": {"c": {"d": 1}}}}"#);
+    }
+
+    #[test]
     fn test_minified_equals_pretty() {
         let config = PrinterConfig::default();
         let minified = r#"{"a":1,"b":[2,3],"c":{"d":"e"}}"#;

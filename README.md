@@ -28,13 +28,13 @@ let formatted = prettify_json_range(input, 100..200, &config);
 
 | Language | Tests | Grammar source | Entry point |
 |----------|------:|----------------|-------------|
-| JSON | 7 | `json.bbnf` | `prettify_json()` |
-| CSS | 7 | `css-stylesheet-pretty.bbnf` | `prettify_css()` |
+| JSON | 9 | `json.bbnf` | `prettify_json()` |
+| CSS | 8 | `css-stylesheet-pretty.bbnf` | `prettify_css()` |
 | EBNF | 4 | `ebnf.bbnf` | `prettify_ebnf()` |
 | BNF | 5 | `bnf.bbnf` | `prettify_bnf()` |
 | BBNF | 5 | `bbnf.bbnf` | `prettify_bbnf()` |
 
-All 28 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
+All 31 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
 
 ## CLI
 
@@ -42,14 +42,14 @@ Built-in languages auto-detect by extension; arbitrary languages JIT-compile fro
 any `.bbnf` grammar.
 
 ```bash
-gorgeous input.json                        # built-in, auto-detect by extension
-gorgeous --lang css input.css              # built-in, explicit language
-gorgeous --grammar my.bbnf input.txt       # JIT: any grammar, instant prettifier
-gorgeous --grammar my.bbnf -r expr in.txt  # JIT with explicit entry rule
-echo '{}' | gorgeous --lang json           # stdin
-gorgeous input.css -o output.css           # write to file
-gorgeous -w 120 -i 2 input.json            # custom width + indent
-gorgeous --clear-cache                     # purge JIT cache
+gorg input.json                        # built-in, auto-detect by extension
+gorg --lang css input.css              # built-in, explicit language
+gorg --grammar my.bbnf input.txt       # JIT: any grammar, instant prettifier
+gorg --grammar my.bbnf -r expr in.txt  # JIT with explicit entry rule
+echo '{}' | gorg --lang json           # stdin
+gorg input.css -o output.css           # write to file
+gorg -w 120 -i 2 input.json            # custom width + indent
+gorg --clear-cache                     # purge JIT cache
 ```
 
 The JIT pipeline parses the `.bbnf`, generates a Cargo project with
@@ -85,22 +85,21 @@ verbatim source text, nodes inside emit formatted `Doc` trees.
 
 ## Performance
 
-Phase-split CSS throughput (normalize.css + app.css):
+Phase-split CSS throughput (app.css):
 
 | Phase | Throughput |
 |-------|-----------|
-| Parse | ~31 MB/s |
-| to_doc | ~28 MB/s |
-| pprint render | ~94 MB/s |
+| to_doc | ~114 MB/s |
+| pprint render | ~86 MB/s |
 
 End-to-end cached throughput:
 
 | Benchmark | Throughput |
 |-----------|-----------|
-| JSON data.json | ~116 MB/s |
-| JSON canada.json | ~50 MB/s |
-| CSS normalize.css | ~29 MB/s |
-| CSS app.css | ~28 MB/s |
+| JSON data.json | ~97 MB/s |
+| JSON canada.json | ~42 MB/s |
+| CSS normalize.css | ~23 MB/s |
+| CSS app.css | ~23 MB/s |
 
 ## Dependencies
 
@@ -116,8 +115,8 @@ Dev: `bencher` for `[[bench]]` harness.
 ## Build
 
 ```bash
-cargo test --lib                # 28 tests
-cargo bench --bench prettify    # 12 benchmarks (JSON 6 + CSS 6)
+cargo test --lib                # 31 tests
+cargo bench --bench gorgeous    # 12 benchmarks (JSON 6 + CSS 6)
 cargo clippy -- -D warnings
 ```
 

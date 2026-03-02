@@ -51,8 +51,9 @@ ruleList   = (ws , ruleItem ?w) * ;
 stylesheet = ws , ruleList ?w ;
 
 @pretty stylesheet block ;
-@pretty ruleList block ;
+@pretty ruleList blankline ;
 @pretty blockContent block indent ;
-@pretty qualifiedRule group indent ;
+@pretty ruleBlock off ;
+@pretty qualifiedRule group softbreak ;
 @pretty declaration group ;
-@pretty atRule group indent ;
+@pretty atRule group softbreak ;

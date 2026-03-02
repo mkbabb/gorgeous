@@ -315,7 +315,7 @@ fn format_grammar(
     }
 
     eprintln!(
-        "gorgeous: grammar has {} rules: {}",
+        "gorg: grammar has {} rules: {}",
         rule_names.len(),
         rule_names.join(", ")
     );
@@ -325,10 +325,10 @@ fn format_grammar(
     let binary = dir.join("target/release/gorgeous-jit");
 
     if !binary.exists() {
-        eprintln!("gorgeous: compiling grammar (first run)…");
+        eprintln!("gorg: compiling grammar (first run)…");
         generate_project(&dir, &grammar_content, &rule_names)?;
         compile_project(&dir)?;
-        eprintln!("gorgeous: cached at {}", dir.display());
+        eprintln!("gorg: cached at {}", dir.display());
     }
 
     run_jit_binary(&binary, rule, input_path, input_stdin, config)
@@ -339,12 +339,12 @@ fn format_grammar(
 // ---------------------------------------------------------------------------
 
 fn usage() -> ! {
-    eprintln!("Usage: gorgeous [OPTIONS] <FILE>");
+    eprintln!("Usage: gorg [OPTIONS] <FILE>");
     eprintln!();
-    eprintln!("  BUILT-IN   gorgeous input.json");
-    eprintln!("  GRAMMAR    gorgeous --grammar my.bbnf input.txt");
-    eprintln!("  STDIN      echo '{{}}' | gorgeous --lang json");
-    eprintln!("  WRITE      gorgeous input.css -o output.css");
+    eprintln!("  BUILT-IN   gorg input.json");
+    eprintln!("  GRAMMAR    gorg --grammar my.bbnf input.txt");
+    eprintln!("  STDIN      echo '{{}}' | gorg --lang json");
+    eprintln!("  WRITE      gorg input.css -o output.css");
     eprintln!();
     eprintln!("Options:");
     eprintln!("  -l, --lang <LANG>       Language: json, css, ebnf, bnf, bbnf");
@@ -413,7 +413,7 @@ fn main() {
                 let dir = cache_dir("").parent().unwrap().to_path_buf();
                 if dir.exists() {
                     std::fs::remove_dir_all(&dir).ok();
-                    eprintln!("gorgeous: cache cleared");
+                    eprintln!("gorg: cache cleared");
                 }
                 std::process::exit(0);
             }
@@ -455,7 +455,7 @@ fn main() {
         ) {
             Ok(output) => emit(&output, output_path.as_deref()),
             Err(e) => {
-                eprintln!("gorgeous: {e}");
+                eprintln!("gorg: {e}");
                 std::process::exit(1);
             }
         }
@@ -489,7 +489,7 @@ fn main() {
     match format_builtin(lang, &input, &config) {
         Ok(output) => emit(&output, output_path.as_deref()),
         Err(e) => {
-            eprintln!("gorgeous: {e}");
+            eprintln!("gorg: {e}");
             std::process::exit(1);
         }
     }

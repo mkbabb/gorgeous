@@ -46,6 +46,7 @@ rule = lhs , S , "=" , S , rhs , S , terminator ;
 
 grammar = ( S , rule , S ) * ;
 
-@pretty grammar block ;
-@pretty rule group ;
-@pretty alternation group ;
+@pretty grammar off ;
+@pretty rule off ;
+@pretty alternation off ;
+@pretty concatenation off ;
