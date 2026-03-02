@@ -1,13 +1,13 @@
-# prettify
+# gorgeous
 
-Grammar-derived pretty-printers for structured languages. Each language is defined
+Grammar-driven pretty-printers for structured languages. Each language is defined
 by a BBNF grammar file — `#[derive(Parser)]` generates the parser, `@pretty`
 directives control formatting, and `pprint` renders the final output.
 
 ## Usage
 
 ```rust
-use prettify::{prettify_json, prettify_css, PrinterConfig};
+use gorgeous::{prettify_json, prettify_css, PrinterConfig};
 
 let config = PrinterConfig { max_width: 80, indent: 2, use_tabs: false };
 
@@ -18,7 +18,7 @@ let formatted_css = prettify_css(input, &config);
 Partial formatting via source range:
 
 ```rust
-use prettify::{prettify_json_range, PrinterConfig};
+use gorgeous::{prettify_json_range, PrinterConfig};
 
 let config = PrinterConfig { max_width: 80, indent: 2, use_tabs: false };
 let formatted = prettify_json_range(input, 100..200, &config);
@@ -28,11 +28,11 @@ let formatted = prettify_json_range(input, 100..200, &config);
 
 | Language | Tests | Grammar source | Entry point |
 |----------|------:|----------------|-------------|
-| JSON | 7 | `json-pretty.bbnf` | `prettify_json()` |
+| JSON | 7 | `json.bbnf` | `prettify_json()` |
 | CSS | 7 | `css-stylesheet-pretty.bbnf` | `prettify_css()` |
-| EBNF | 4 | `ebnf-pretty.bbnf` | `prettify_ebnf()` |
-| BNF | 5 | `bnf-pretty.bbnf` | `prettify_bnf()` |
-| BBNF | 5 | `bbnf-pretty.bbnf` | `prettify_bbnf()` |
+| EBNF | 4 | `ebnf.bbnf` | `prettify_ebnf()` |
+| BNF | 5 | `bnf.bbnf` | `prettify_bnf()` |
+| BBNF | 5 | `bbnf.bbnf` | `prettify_bbnf()` |
 
 All 28 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
 
@@ -84,10 +84,10 @@ End-to-end cached throughput:
 
 ## Dependencies
 
-All path dependencies — no registry crates at runtime:
+All from crates.io:
 
 - [`parse_that`](https://github.com/mkbabb/parse-that) — parser combinators
-- [`bbnf-derive`](https://github.com/mkbabb/bbnf-lang) — `#[derive(Parser)]` proc-macro
+- [`bbnf_derive`](https://github.com/mkbabb/bbnf-lang) — `#[derive(Parser)]` proc-macro
 - [`bbnf`](https://github.com/mkbabb/bbnf-lang) — grammar analysis
 - [`pprint`](https://github.com/mkbabb/pprint) — Wadler-Lindig pretty-printer
 
@@ -96,7 +96,7 @@ Dev: `bencher` for `[[bench]]` harness.
 ## Build
 
 ```bash
-cargo test                      # 28 tests
+cargo test --lib                # 28 tests
 cargo bench --bench prettify    # 12 benchmarks (JSON 6 + CSS 6)
 cargo clippy -- -D warnings
 ```

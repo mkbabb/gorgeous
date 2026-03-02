@@ -315,7 +315,7 @@ fn format_grammar(
     }
 
     eprintln!(
-        "prettify: grammar has {} rules: {}",
+        "gorgeous: grammar has {} rules: {}",
         rule_names.len(),
         rule_names.join(", ")
     );

@@ -2,9 +2,9 @@
 
 use bencher::{benchmark_group, benchmark_main, Bencher};
 use pprint::pprint as render;
-use prettify::json::prettify_json;
-use prettify::css::{prettify_css, CssParser};
-use prettify::{PrinterConfig, ToDoc};
+use gorgeous::json::prettify_json;
+use gorgeous::css::{prettify_css, CssParser};
+use gorgeous::{PrinterConfig, ToDoc};
 
 // ── Data loaders ─────────────────────────────────────────────────────────────
 
@@ -120,7 +120,7 @@ fn bench_css_app_cached(b: &mut Bencher) {
 // ── JSON cached benchmarks ──────────────────────────────────────────────────
 
 fn bench_json_small_cached(b: &mut Bencher) {
-    use prettify::json::JsonParser;
+    use gorgeous::json::JsonParser;
     let input = r#"{"name": "Alice", "age": 30, "active": true}"#;
     let config = PrinterConfig::default();
     let parser = JsonParser::value();
@@ -132,7 +132,7 @@ fn bench_json_small_cached(b: &mut Bencher) {
 }
 
 fn bench_json_data_cached(b: &mut Bencher) {
-    use prettify::json::JsonParser;
+    use gorgeous::json::JsonParser;
     let input = load_json_data();
     let config = PrinterConfig::default();
     let parser = JsonParser::value();
@@ -144,7 +144,7 @@ fn bench_json_data_cached(b: &mut Bencher) {
 }
 
 fn bench_json_canada_cached(b: &mut Bencher) {
-    use prettify::json::JsonParser;
+    use gorgeous::json::JsonParser;
     let input = load_json_canada();
     let config = PrinterConfig::default();
     let parser = JsonParser::value();

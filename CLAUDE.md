@@ -93,9 +93,9 @@ All five built-in, all tests pass (28 total):
 - Edition 2024, nightly required (`#![feature(cold_path)]`)
 - Crate name `gorgeous`, lib name `gorgeous`, binary name `gorgeous`
 - Each language module: `#[derive(Parser)]` + `impl ToDoc` + `impl SourceRange` + `prettify_X()` entry point
-- Grammar files live in `bbnf-lang/grammar/lang/` — `@pretty` directives control doc generation
+- Grammar files bundled in `grammar/` — `@pretty` directives control doc generation
 - CSS grammar: `css-stylesheet-pretty.bbnf` (standalone, no imports)
 - `PrinterConfig` controls `max_width`, `indent`, `use_tabs` — passed to `pprint::Printer`
 - `range_to_doc()` — partial formatting, emits verbatim source for non-overlapping nodes
 - Idempotency: `prettify(prettify(x)) == prettify(x)` — tested for JSON and EBNF
-- JIT: `DefaultHasher` for grammar content hashing, `DepPaths::resolve()` resolves sibling crate paths from `CARGO_MANIFEST_DIR`
+- JIT: `DefaultHasher` for grammar content hashing, cached in `~/.cache/gorgeous/<hash>/`
