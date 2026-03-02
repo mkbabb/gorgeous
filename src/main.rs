@@ -72,8 +72,8 @@ fn cache_dir(hash: &str) -> PathBuf {
 
 /// Crate versions baked in at compile time (match gorgeous's own deps).
 const DEP_PARSE_THAT: &str = "0.1.1";
-const DEP_BBNF_DERIVE: &str = "0.1.1";
-const DEP_BBNF: &str = "0.1.1";
+const DEP_BBNF_DERIVE: &str = "0.2.0";
+const DEP_BBNF: &str = "0.2.0";
 const DEP_PPRINT: &str = "0.3.1";
 
 /// Generate a temporary Cargo project that `#[derive(Parser)]` from the grammar.

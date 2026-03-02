@@ -19,8 +19,8 @@ path = "src/lib.rs"
 
 [dependencies]
 parse_that = "0.1.1"
-bbnf_derive = "0.1.1"
-bbnf = "0.1.1"
+bbnf_derive = "0.2.0"
+bbnf = "0.2.0"
 pprint = "0.3.1"
 
 [dev-dependencies]
