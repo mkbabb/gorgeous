@@ -70,12 +70,17 @@ fn cache_dir(hash: &str) -> PathBuf {
     base.join("gorgeous").join(hash)
 }
 
+/// Crate versions baked in at compile time (match gorgeous's own deps).
+const DEP_PARSE_THAT: &str = "0.1.1";
+const DEP_BBNF_DERIVE: &str = "0.1.1";
+const DEP_BBNF: &str = "0.1.1";
+const DEP_PPRINT: &str = "0.3.1";
+
 /// Generate a temporary Cargo project that `#[derive(Parser)]` from the grammar.
 fn generate_project(
     dir: &Path,
     grammar_content: &str,
     rule_names: &[String],
-    dep_paths: &DepPaths,
 ) -> Result<(), String> {
     let src_dir = dir.join("src");
     std::fs::create_dir_all(&src_dir).map_err(|e| format!("mkdir: {e}"))?;
@@ -84,28 +89,24 @@ fn generate_project(
     std::fs::write(dir.join("grammar.bbnf"), grammar_content)
         .map_err(|e| format!("write grammar: {e}"))?;
 
-    // Cargo.toml
+    // Cargo.toml — deps from crates.io, no local paths
     let cargo_toml = format!(
         r#"[package]
-name = "prettify-jit"
+name = "gorgeous-jit"
 version = "0.0.0"
 edition = "2024"
 publish = false
 
 [dependencies]
-parse_that = {{ path = "{parse_that}" }}
-bbnf_derive = {{ path = "{bbnf_derive}" }}
-bbnf = {{ path = "{bbnf}" }}
-pprint = {{ path = "{pprint}" }}
+parse_that = "{DEP_PARSE_THAT}"
+bbnf_derive = "{DEP_BBNF_DERIVE}"
+bbnf = "{DEP_BBNF}"
+pprint = "{DEP_PPRINT}"
 
 [profile.release]
 opt-level = 2
 lto = "thin"
-"#,
-        parse_that = dep_paths.parse_that.display(),
-        bbnf_derive = dep_paths.bbnf_derive.display(),
-        bbnf = dep_paths.bbnf.display(),
-        pprint = dep_paths.pprint.display(),
+"#
     );
     std::fs::write(dir.join("Cargo.toml"), cargo_toml)
         .map_err(|e| format!("write Cargo.toml: {e}"))?;
@@ -239,7 +240,7 @@ fn compile_project(dir: &Path) -> Result<PathBuf, String> {
         return Err(format!("compilation failed:\n{stderr}"));
     }
 
-    let binary = dir.join("target/release/prettify-jit");
+    let binary = dir.join("target/release/gorgeous-jit");
     if !binary.exists() {
         return Err("binary not found after compilation".into());
     }
@@ -297,29 +298,6 @@ fn run_jit_binary(
     String::from_utf8(output.stdout).map_err(|e| format!("utf8: {e}"))
 }
 
-/// Paths to local crate dependencies (resolved at compile time).
-struct DepPaths {
-    parse_that: PathBuf,
-    bbnf_derive: PathBuf,
-    bbnf: PathBuf,
-    pprint: PathBuf,
-}
-
-impl DepPaths {
-    fn resolve() -> Self {
-        // Use the same paths the prettify crate was built with.
-        // These are adjacent repos in the user's workspace.
-        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let workspace = manifest.parent().unwrap_or(Path::new("."));
-        DepPaths {
-            parse_that: workspace.join("parse-that/rust/parse_that"),
-            bbnf_derive: workspace.join("bbnf-lang/rust/bbnf-derive"),
-            bbnf: workspace.join("bbnf-lang/rust/bbnf"),
-            pprint: workspace.join("pprint"),
-        }
-    }
-}
-
 /// Full JIT pipeline: parse grammar → generate → compile → cache → run.
 fn format_grammar(
     grammar_path: &str,
@@ -344,12 +322,11 @@ fn format_grammar(
 
     let hash = grammar_hash(&grammar_content);
     let dir = cache_dir(&hash);
-    let binary = dir.join("target/release/prettify-jit");
+    let binary = dir.join("target/release/gorgeous-jit");
 
     if !binary.exists() {
         eprintln!("gorgeous: compiling grammar (first run)…");
-        let deps = DepPaths::resolve();
-        generate_project(&dir, &grammar_content, &rule_names, &deps)?;
+        generate_project(&dir, &grammar_content, &rule_names)?;
         compile_project(&dir)?;
         eprintln!("gorgeous: cached at {}", dir.display());
     }
