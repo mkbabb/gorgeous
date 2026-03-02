@@ -5,7 +5,7 @@ use crate::{PrinterConfig, SourceRange, ToDoc};
 
 #[derive(Parser)]
 #[parser(
-    path = "../bbnf-lang/grammar/css/css-stylesheet-pretty.bbnf",
+    path = "grammar/css/css-stylesheet-pretty.bbnf",
     prettify
 )]
 pub struct CssParser;

@@ -5,7 +5,7 @@ use crate::{PrinterConfig, SourceRange, ToDoc};
 
 #[derive(Parser)]
 #[parser(
-    path = "../bbnf-lang/grammar/lang/ebnf.bbnf",
+    path = "grammar/lang/ebnf.bbnf",
     prettify
 )]
 pub struct EbnfParser;

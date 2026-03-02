@@ -5,7 +5,7 @@ use crate::{PrinterConfig, SourceRange, ToDoc};
 
 #[derive(Parser)]
 #[parser(
-    path = "../bbnf-lang/grammar/lang/json.bbnf",
+    path = "grammar/lang/json.bbnf",
     prettify
 )]
 pub struct JsonParser;
