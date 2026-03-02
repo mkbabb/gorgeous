@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout prettify
+        uses: actions/checkout@v4
+        with:
+          path: prettify
+
+      - name: Checkout parse-that
+        uses: actions/checkout@v4
+        with:
+          repository: mkbabb/parse-that
+          path: parse-that
+
+      - name: Checkout bbnf-lang
+        uses: actions/checkout@v4
+        with:
+          repository: mkbabb/bbnf-lang
+          path: bbnf-lang
+
+      - name: Checkout pprint
+        uses: actions/checkout@v4
+        with:
+          repository: mkbabb/pprint
+          path: pprint
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
+      - name: Patch path dependencies
+        working-directory: prettify
+        run: |
+          mkdir -p .cargo
+          cat > .cargo/config.toml << 'EOF'
+          [patch.crates-io]
+
+          [env]
+
+          # Override path deps to sibling checkouts
+          EOF
+
+          sed -i 's|path = ".*/parse-that/rust/parse_that"|path = "../parse-that/rust/parse_that"|g' Cargo.toml
+          sed -i 's|path = ".*/bbnf-lang/rust/bbnf-derive"|path = "../bbnf-lang/rust/bbnf-derive"|g' Cargo.toml
+          sed -i 's|path = ".*/bbnf-lang/rust/bbnf"|path = "../bbnf-lang/rust/bbnf"|g' Cargo.toml
+          sed -i 's|path = ".*/pprint"|path = "../pprint"|g' Cargo.toml
+
+      - name: Clippy
+        working-directory: prettify
+        run: cargo clippy -- -D warnings
+
+      - name: Test
+        working-directory: prettify
+        run: cargo test

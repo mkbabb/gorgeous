@@ -34,7 +34,7 @@ impl PrinterConfig {
     }
 
     pub fn to_printer(&self) -> pprint::Printer {
-        pprint::Printer::new(self.max_width, self.indent, false, self.use_tabs)
+        pprint::Printer::new(self.max_width, self.indent, self.use_tabs)
     }
 }
 

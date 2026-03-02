@@ -51,10 +51,12 @@ All five implemented, all tests pass (28 total):
 
 | Benchmark | Throughput |
 |-----------|-----------|
-| JSON data.json cached | ~116 MB/s |
-| JSON canada.json cached | ~50 MB/s |
-| CSS normalize.css cached | ~29 MB/s |
-| CSS app.css cached | ~28 MB/s |
+| JSON data.json cached | ~119 MB/s |
+| JSON canada.json cached | ~53 MB/s |
+| CSS normalize.css cached | ~22 MB/s |
+| CSS app.css cached | ~22 MB/s |
+| CSS app.css to_doc only | ~117 MB/s |
+| CSS app.css render only | ~93 MB/s |
 
 ## Conventions
 
