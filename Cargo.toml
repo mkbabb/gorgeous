@@ -1,10 +1,21 @@
 [package]
-name = "prettify"
+name = "gorgeous"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
 description = "Grammar-driven pretty printers auto-generated from BBNF grammars"
 rust-version = "1.85"
+repository = "https://github.com/mkbabb/gorgeous"
+keywords = ["formatter", "pretty-printer", "bbnf", "grammar", "code-formatting"]
+categories = ["command-line-utilities", "text-processing", "development-tools"]
+
+[[bin]]
+name = "gorgeous"
+path = "src/main.rs"
+
+[lib]
+name = "gorgeous"
+path = "src/lib.rs"
 
 [dependencies]
 parse_that = { version = "0.1.0", path = "/Users/mkbabb/Programming/parse-that/rust/parse_that" }
