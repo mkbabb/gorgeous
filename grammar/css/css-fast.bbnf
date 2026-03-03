@@ -12,8 +12,9 @@ valueSpan    = /[^;{}!,]+/ ;
 propertyName = /[a-zA-Z_][\w-]*/ | /--[\w-]+/ | /-[a-zA-Z][\w-]*/ ;
 important    = "!" ?w , "important" ;
 optSemicolon = ";" ? ;
-declaration  = propertyName ?w , ":" ?w , valueSpan , ("," ?w , valueSpan) * ,
-               important ? , optSemicolon ?w ;
+declProperty = propertyName ?w , ":" ;
+declValue    = valueSpan , ("," ?w , valueSpan) * , important ? , optSemicolon ;
+declaration  = declProperty ?w , declValue ?w ;
 
 blockContent = (ws , (declaration | ruleItem) ?w) * ;
 ruleBlock    = "{" ?w , blockContent ?w , "}" ;
@@ -33,6 +34,6 @@ stylesheet = ws , ruleList ?w ;
 @pretty ruleList blankline ;
 @pretty blockContent block indent ;
 @pretty ruleBlock off ;
-@pretty qualifiedRule group softbreak ;
+@pretty qualifiedRule group nobreak ;
 @pretty declaration group ;
-@pretty atRule group softbreak ;
+@pretty atRule group nobreak ;

@@ -14,9 +14,8 @@ src/
   bnf.rs               # BNF prettifier — 5 tests, idempotent multi-rule
   bbnf.rs              # BBNF prettifier — 5 tests, idempotent multi-rule
   css.rs               # CSS prettifier — 8 tests, nested rules, media queries
-  css_fast.rs          # CSS fast grammar — 6 tests, no comments/recover, 52 MB/s
 benches/
-  gorgeous.rs          # 25 benchmarks: JSON + CSS + CSS fast
+  gorgeous.rs          # 19 benchmarks: JSON + CSS
 data/json/             # benchmark datasets (data.json 35KB, canada.json 2.2MB)
 data/css/              # benchmark datasets (normalize.css 1.8KB, app.css 6.3KB)
 ```
@@ -71,28 +70,25 @@ Dev: `bencher` (harness for `[[bench]]`).
 
 ## Languages
 
-All five built-in, all tests pass (37 total):
+All five built-in, all tests pass (31 total):
 
 - JSON — 9 tests, range formatting via `prettify_json_range()`
 - EBNF — 4 tests, idempotent multi-rule
 - BNF — 5 tests, idempotent multi-rule
 - BBNF — 5 tests, idempotent multi-rule
 - CSS — 8 tests, nested rules, media queries, `css-stylesheet-pretty.bbnf`
-- CSS fast — 6 tests, `css-fast.bbnf` (no comments, no @recover, single atRule)
 
 ## Benchmark Throughput
 
 | Benchmark | Throughput |
 |-----------|-----------|
-| JSON data.json cached | ~175 MB/s |
-| JSON canada.json cached | ~79 MB/s |
-| JSON data.json parse only | ~1,063 MB/s |
-| CSS app.css cached | ~28 MB/s |
-| CSS app.css parse only | ~37 MB/s |
-| CSS fast app.css cached | ~52 MB/s |
-| CSS fast app.css parse only | ~88 MB/s |
-| CSS app.css to_doc only | ~296 MB/s |
-| CSS app.css render only | ~278 MB/s |
+| JSON data.json cached | ~169 MB/s |
+| JSON canada.json cached | ~72 MB/s |
+| JSON data.json parse only | ~1,046 MB/s |
+| CSS app.css cached | ~24 MB/s |
+| CSS app.css parse only | ~34 MB/s |
+| CSS app.css to_doc only | ~184 MB/s |
+| CSS app.css render only | ~205 MB/s |
 
 ## Conventions
 
@@ -100,7 +96,7 @@ All five built-in, all tests pass (37 total):
 - Crate name `gorgeous`, lib name `gorgeous`, binary name `gorg`
 - Each language module: `#[derive(Parser)]` + `impl ToDoc` + `impl SourceRange` + `prettify_X()` entry point
 - Grammar files bundled in `grammar/` — `@pretty` directives control doc generation
-- CSS grammars: `css-stylesheet-pretty.bbnf` (full, with comments/recover) and `css-fast.bbnf` (streamlined)
+- CSS grammar: `css-stylesheet-pretty.bbnf` (standalone, no imports); `css-fast.bbnf` available for JIT
 - `PrinterConfig` controls `max_width`, `indent`, `use_tabs` — passed to `pprint::Printer`
 - `range_to_doc()` — partial formatting, emits verbatim source for non-overlapping nodes
 - Idempotency: `prettify(prettify(x)) == prettify(x)` — tested for JSON and EBNF
