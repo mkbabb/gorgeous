@@ -4,6 +4,7 @@ use bencher::{benchmark_group, benchmark_main, Bencher};
 use pprint::{pprint as render, pprint_ref};
 use gorgeous::json::prettify_json;
 use gorgeous::css::{prettify_css, CssParser};
+use gorgeous::css_fast::{prettify_css_fast, CssFastParser};
 use gorgeous::{PrinterConfig, ToDoc};
 
 // ── Data loaders ─────────────────────────────────────────────────────────────
@@ -233,6 +234,68 @@ fn bench_json_canada_parse_only(b: &mut Bencher) {
     });
 }
 
+// ── CSS fast grammar benchmarks ──────────────────────────────────────────────
+
+fn bench_css_fast_small_rule(b: &mut Bencher) {
+    let input = "body { color: red; font-size: 16px; margin: 0; padding: 0; }";
+    let config = PrinterConfig::default();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        prettify_css_fast(input, &config).unwrap();
+    });
+}
+
+fn bench_css_fast_app(b: &mut Bencher) {
+    let input = load_css_app();
+    let config = PrinterConfig::default();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        prettify_css_fast(&input, &config).unwrap();
+    });
+}
+
+fn bench_css_fast_app_cached(b: &mut Bencher) {
+    let input = load_css_app();
+    let config = PrinterConfig::default();
+    let parser = CssFastParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        let ast = parser.parse(&input).unwrap();
+        render(ast.to_doc(), Some(config.to_printer()))
+    });
+}
+
+fn bench_css_fast_app_parse_only(b: &mut Bencher) {
+    let input = load_css_app();
+    let parser = CssFastParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_css_fast_app_to_doc_only(b: &mut Bencher) {
+    let input = load_css_app();
+    let parser = CssFastParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_css_fast_app_render_only(b: &mut Bencher) {
+    let input = load_css_app();
+    let config = PrinterConfig::default();
+    let parser = CssFastParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, Some(config.to_printer()))
+    });
+}
+
 // ── Groups ───────────────────────────────────────────────────────────────────
 
 benchmark_group!(
@@ -278,5 +341,19 @@ benchmark_group!(
     bench_json_canada_parse_only,
 );
 
-benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, json_phase_benches);
+benchmark_group!(
+    css_fast_benches,
+    bench_css_fast_small_rule,
+    bench_css_fast_app,
+    bench_css_fast_app_cached,
+);
+
+benchmark_group!(
+    css_fast_phase_benches,
+    bench_css_fast_app_parse_only,
+    bench_css_fast_app_to_doc_only,
+    bench_css_fast_app_render_only,
+);
+
+benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, json_phase_benches, css_fast_benches, css_fast_phase_benches);
 

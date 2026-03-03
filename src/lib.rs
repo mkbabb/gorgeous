@@ -8,6 +8,7 @@ pub mod bbnf;
 pub mod ebnf;
 pub mod bnf;
 pub mod css;
+pub mod css_fast;
 
 /// Configuration for the prettifier output.
 #[derive(Debug, Clone)]
