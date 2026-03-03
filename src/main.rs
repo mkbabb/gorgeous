@@ -2,7 +2,7 @@
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::io::{self, Read, Write};
+use std::io::{self, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -502,6 +502,8 @@ fn emit(output: &str, path: Option<&str>) {
             std::process::exit(1);
         });
     } else {
-        io::stdout().write_all(output.as_bytes()).unwrap();
+        let stdout = io::stdout().lock();
+        let mut writer = BufWriter::new(stdout);
+        writer.write_all(output.as_bytes()).unwrap();
     }
 }

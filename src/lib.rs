@@ -1,5 +1,8 @@
 #![feature(cold_path)]
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 pub mod json;
 pub mod bbnf;
 pub mod ebnf;

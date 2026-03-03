@@ -1,7 +1,7 @@
 #![feature(cold_path)]
 
 use bencher::{benchmark_group, benchmark_main, Bencher};
-use pprint::pprint as render;
+use pprint::{pprint as render, pprint_ref};
 use gorgeous::json::prettify_json;
 use gorgeous::css::{prettify_css, CssParser};
 use gorgeous::{PrinterConfig, ToDoc};
@@ -184,7 +184,52 @@ fn bench_css_app_render_only(b: &mut Bencher) {
     let doc = ast.to_doc();
     b.bytes = input.len() as u64;
     b.iter(|| {
-        render(doc.clone(), Some(config.to_printer()))
+        pprint_ref(&doc, Some(config.to_printer()))
+    });
+}
+
+// ── JSON phase-split benchmarks (parse vs to_doc vs render) ──────────────────
+
+fn bench_json_data_parse_only(b: &mut Bencher) {
+    use gorgeous::json::JsonParser;
+    let input = load_json_data();
+    let parser = JsonParser::value();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_json_data_to_doc_only(b: &mut Bencher) {
+    use gorgeous::json::JsonParser;
+    let input = load_json_data();
+    let parser = JsonParser::value();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_json_data_render_only(b: &mut Bencher) {
+    use gorgeous::json::JsonParser;
+    let input = load_json_data();
+    let parser = JsonParser::value();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, Some(PrinterConfig::default().to_printer()))
+    });
+}
+
+fn bench_json_canada_parse_only(b: &mut Bencher) {
+    use gorgeous::json::JsonParser;
+    let input = load_json_canada();
+    let parser = JsonParser::value();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
     });
 }
 
@@ -225,5 +270,13 @@ benchmark_group!(
     bench_css_app_render_only,
 );
 
-benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches);
+benchmark_group!(
+    json_phase_benches,
+    bench_json_data_parse_only,
+    bench_json_data_to_doc_only,
+    bench_json_data_render_only,
+    bench_json_canada_parse_only,
+);
+
+benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, json_phase_benches);
 
