@@ -6,13 +6,69 @@ use crate::{PrinterConfig, SourceRange, ToDoc};
 #[derive(Parser)]
 #[parser(
     path = "grammar/css/css-stylesheet-pretty.bbnf",
-    prettify
+    prettify,
+    skip_recover
 )]
 pub struct CssParser;
 
+/// Split a CSS selector string on commas, respecting parentheses and brackets.
+/// Handles `:is(.a, .b)`, `:not([href])`, `[attr="x,y"]`, and nested parens.
+fn split_selectors(text: &str) -> Vec<&str> {
+    let mut result = Vec::new();
+    let mut depth = 0u32;
+    let mut start = 0;
+    for (i, b) in text.bytes().enumerate() {
+        match b {
+            b'(' | b'[' => depth += 1,
+            b')' | b']' => depth = depth.saturating_sub(1),
+            b',' if depth == 0 => {
+                result.push(text[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    result.push(text[start..].trim());
+    result
+}
+
 impl<'a> ToDoc<'a> for CssParserEnum<'a> {
     fn to_doc(&self) -> pprint::Doc<'a> {
-        CssParserEnum::to_doc(self)
+        match self {
+            // Override: selector lists use ",\n" when breaking, ", " when inline.
+            CssParserEnum::qualifiedRule((selector, block)) => {
+                let selector_doc = if let CssParserEnum::selectorSpan(span) = selector.as_ref() {
+                    let text = span.as_str();
+                    let selectors = split_selectors(text);
+                    if selectors.len() > 1 {
+                        let break_sep = pprint::Doc::IfBreak(
+                            Box::new(
+                                pprint::Doc::Char(b',')
+                                    + pprint::Doc::Hardline,
+                            ),
+                            Box::new(pprint::Doc::String(std::borrow::Cow::Borrowed(", "))),
+                        );
+                        let mut body = pprint::Doc::String(
+                            std::borrow::Cow::Borrowed(selectors[0]),
+                        );
+                        for sel in &selectors[1..] {
+                            body = body
+                                + break_sep.clone()
+                                + pprint::Doc::String(std::borrow::Cow::Borrowed(sel));
+                        }
+                        pprint::Doc::Group(Box::new(body))
+                    } else {
+                        selector.to_doc()
+                    }
+                } else {
+                    selector.to_doc()
+                };
+                selector_doc
+                    + pprint::Doc::String(std::borrow::Cow::Borrowed(" "))
+                    + block.to_doc()
+            }
+            _ => CssParserEnum::to_doc(self),
+        }
     }
 }
 
@@ -26,7 +82,7 @@ impl<'a> SourceRange for CssParserEnum<'a> {
 pub fn prettify_css(input: &str, config: &PrinterConfig) -> Option<String> {
     let ast = CssParser::stylesheet().parse(input)?;
     let doc = ast.to_doc();
-    Some(render(doc, Some(config.to_printer())))
+    Some(render(doc, config.to_printer()))
 }
 
 /// Pretty-print only AST nodes overlapping `[range.start, range.end)`.
@@ -37,7 +93,7 @@ pub fn prettify_css_range(
 ) -> Option<String> {
     let ast = CssParser::stylesheet().parse(input)?;
     let doc = crate::range_to_doc(&ast, input, range);
-    Some(render(doc, Some(config.to_printer())))
+    Some(render(doc, config.to_printer()))
 }
 
 #[cfg(test)]

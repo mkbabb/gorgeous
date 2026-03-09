@@ -2,16 +2,15 @@
 // Models CSS nesting (CSS Nesting Module Level 1) to create structural AST.
 // Treats selectors and values as opaque spans for formatting.
 
-// Comments + whitespace
-cssComment = /\/\*[^*]*\*+([^\/*][^*]*\*+)*\// ;
-ws         = (/\s+/ | cssComment) * ;
+// Comments + whitespace — monolithic byte scanner (memchr for */)
+ws = /(?s)(?:\s|\/\*.*?\*\/)*/  ;
 
 // Opaque tokens
 selectorSpan = /[^{};]+[^\s{};]/ | /[^{};]/ ;
 valueSpan    = /[^;{}!,]+/ ;
 
 // Declarations
-propertyName = /[a-zA-Z_][\w-]*/ | /--[\w-]+/ | /-[a-zA-Z][\w-]*/ ;
+propertyName = /[a-zA-Z_][\w-]*|--[\w-]+|-[a-zA-Z][\w-]*/ ;
 important    = "!" ?w , "important" ;
 optSemicolon = ";" ? ;
 // Group property+colon and value+semicolon as separate units so the

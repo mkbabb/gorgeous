@@ -209,7 +209,7 @@ fn main() {{
     match doc {{
         Some(d) => {{
             let printer = pprint::Printer::new(width, indent, use_tabs);
-            let output = render(d, Some(printer));
+            let output = render(d, printer);
             io::stdout().write_all(output.as_bytes()).unwrap();
         }}
         None => {{

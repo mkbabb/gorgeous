@@ -27,7 +27,7 @@ impl<'a> SourceRange for JsonParserEnum<'a> {
 pub fn prettify_json(input: &str, config: &PrinterConfig) -> Option<String> {
     let ast = JsonParser::value().parse(input)?;
     let doc = ast.to_doc();
-    Some(render(doc, Some(config.to_printer())))
+    Some(render(doc, config.to_printer()))
 }
 
 /// Pretty-print only AST nodes overlapping `[range.start, range.end)`.
@@ -38,7 +38,7 @@ pub fn prettify_json_range(
 ) -> Option<String> {
     let ast = JsonParser::value().parse(input)?;
     let doc = crate::range_to_doc(&ast, input, range);
-    Some(render(doc, Some(config.to_printer())))
+    Some(render(doc, config.to_printer()))
 }
 
 #[cfg(test)]

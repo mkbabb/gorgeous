@@ -24,6 +24,14 @@ fn load_css_app() -> String {
     std::fs::read_to_string("data/css/app.css").expect("app.css not found")
 }
 
+fn load_css_bootstrap() -> String {
+    std::fs::read_to_string("data/css/bootstrap.css").expect("bootstrap.css not found")
+}
+
+fn load_css_tailwind() -> String {
+    std::fs::read_to_string("data/css/tailwind-output.css").expect("tailwind-output.css not found")
+}
+
 // ── JSON benchmarks ──────────────────────────────────────────────────────────
 
 fn bench_json_small_object(b: &mut Bencher) {
@@ -82,6 +90,15 @@ fn bench_css_app(b: &mut Bencher) {
     });
 }
 
+fn bench_css_bootstrap(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let config = PrinterConfig::default();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        prettify_css(&input, &config).unwrap();
+    });
+}
+
 // ── CSS cached benchmarks (parser built once, reused) ───────────────────────
 
 fn bench_css_small_rule_cached(b: &mut Bencher) {
@@ -91,7 +108,7 @@ fn bench_css_small_rule_cached(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         let ast = parser.parse(input).unwrap();
-        render(ast.to_doc(), Some(config.to_printer()))
+        render(ast.to_doc(), config.to_printer())
     });
 }
 
@@ -102,7 +119,7 @@ fn bench_css_normalize_cached(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         let ast = parser.parse(&input).unwrap();
-        render(ast.to_doc(), Some(config.to_printer()))
+        render(ast.to_doc(), config.to_printer())
     });
 }
 
@@ -113,7 +130,49 @@ fn bench_css_app_cached(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         let ast = parser.parse(&input).unwrap();
-        render(ast.to_doc(), Some(config.to_printer()))
+        render(ast.to_doc(), config.to_printer())
+    });
+}
+
+fn bench_css_bootstrap_cached(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let config = PrinterConfig::default();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        let ast = parser.parse(&input).unwrap();
+        render(ast.to_doc(), config.to_printer())
+    });
+}
+
+fn bench_css_bootstrap_parse_only(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_css_bootstrap_to_doc_only(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_css_bootstrap_render_only(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let config = PrinterConfig::default();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
     });
 }
 
@@ -127,7 +186,7 @@ fn bench_json_small_cached(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         let ast = parser.parse(input).unwrap();
-        render(ast.to_doc(), Some(config.to_printer()))
+        render(ast.to_doc(), config.to_printer())
     });
 }
 
@@ -139,7 +198,7 @@ fn bench_json_data_cached(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         let ast = parser.parse(&input).unwrap();
-        render(ast.to_doc(), Some(config.to_printer()))
+        render(ast.to_doc(), config.to_printer())
     });
 }
 
@@ -151,7 +210,7 @@ fn bench_json_canada_cached(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         let ast = parser.parse(&input).unwrap();
-        render(ast.to_doc(), Some(config.to_printer()))
+        render(ast.to_doc(), config.to_printer())
     });
 }
 
@@ -184,7 +243,7 @@ fn bench_css_app_render_only(b: &mut Bencher) {
     let doc = ast.to_doc();
     b.bytes = input.len() as u64;
     b.iter(|| {
-        pprint_ref(&doc, Some(config.to_printer()))
+        pprint_ref(&doc, config.to_printer())
     });
 }
 
@@ -219,7 +278,7 @@ fn bench_json_data_render_only(b: &mut Bencher) {
     let doc = ast.to_doc();
     b.bytes = input.len() as u64;
     b.iter(|| {
-        pprint_ref(&doc, Some(PrinterConfig::default().to_printer()))
+        pprint_ref(&doc, PrinterConfig::default().to_printer())
     });
 }
 
@@ -230,6 +289,99 @@ fn bench_json_canada_parse_only(b: &mut Bencher) {
     b.bytes = input.len() as u64;
     b.iter(|| {
         parser.parse(&input).unwrap()
+    });
+}
+
+// ── Tailwind benchmarks ─────────────────────────────────────────────────────
+
+fn bench_css_tailwind(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let config = PrinterConfig::default();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        prettify_css(&input, &config).unwrap();
+    });
+}
+
+fn bench_css_tailwind_cached(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let config = PrinterConfig::default();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        let ast = parser.parse(&input).unwrap();
+        render(ast.to_doc(), config.to_printer())
+    });
+}
+
+fn bench_css_tailwind_parse_only(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_css_tailwind_to_doc_only(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_css_tailwind_render_only(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let config = PrinterConfig::default();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
+    });
+}
+
+// ── Biome competitor benchmarks ─────────────────────────────────────────────
+
+fn biome_format_css(input: &str) -> String {
+    use biome_css_parser::{CssParserOptions, parse_css};
+    use biome_css_formatter::{context::CssFormatOptions, format_node};
+
+    let parsed = parse_css(input, CssParserOptions::default());
+    let options = CssFormatOptions::default();
+    let formatted = format_node(options, &parsed.syntax()).unwrap();
+    formatted.print().unwrap().into_code()
+}
+
+fn bench_biome_css_bootstrap(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    b.bytes = input.len() as u64;
+    // Warmup to verify it works.
+    let _ = biome_format_css(&input);
+    b.iter(|| {
+        biome_format_css(&input)
+    });
+}
+
+fn bench_biome_css_tailwind(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    b.bytes = input.len() as u64;
+    let _ = biome_format_css(&input);
+    b.iter(|| {
+        biome_format_css(&input)
+    });
+}
+
+fn bench_biome_css_app(b: &mut Bencher) {
+    let input = load_css_app();
+    b.bytes = input.len() as u64;
+    let _ = biome_format_css(&input);
+    b.iter(|| {
+        biome_format_css(&input)
     });
 }
 
@@ -254,6 +406,8 @@ benchmark_group!(
     bench_css_small_rule,
     bench_css_normalize,
     bench_css_app,
+    bench_css_bootstrap,
+    bench_css_tailwind,
 );
 
 benchmark_group!(
@@ -261,6 +415,8 @@ benchmark_group!(
     bench_css_small_rule_cached,
     bench_css_normalize_cached,
     bench_css_app_cached,
+    bench_css_bootstrap_cached,
+    bench_css_tailwind_cached,
 );
 
 benchmark_group!(
@@ -268,6 +424,19 @@ benchmark_group!(
     bench_css_app_parse_only,
     bench_css_app_to_doc_only,
     bench_css_app_render_only,
+    bench_css_bootstrap_parse_only,
+    bench_css_bootstrap_to_doc_only,
+    bench_css_bootstrap_render_only,
+    bench_css_tailwind_parse_only,
+    bench_css_tailwind_to_doc_only,
+    bench_css_tailwind_render_only,
+);
+
+benchmark_group!(
+    biome_benches,
+    bench_biome_css_app,
+    bench_biome_css_bootstrap,
+    bench_biome_css_tailwind,
 );
 
 benchmark_group!(
@@ -278,5 +447,5 @@ benchmark_group!(
     bench_json_canada_parse_only,
 );
 
-benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, json_phase_benches);
+benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, biome_benches, json_phase_benches);
 

@@ -26,7 +26,7 @@ impl<'a> SourceRange for EbnfParserEnum<'a> {
 pub fn prettify_ebnf(input: &str, config: &PrinterConfig) -> Option<String> {
     let ast = EbnfParser::grammar().parse(input)?;
     let doc = ast.to_doc();
-    Some(render(doc, Some(config.to_printer())))
+    Some(render(doc, config.to_printer()))
 }
 
 #[cfg(test)]
