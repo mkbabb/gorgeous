@@ -56,6 +56,7 @@ stylesheet = ws , ruleList ?w ;
 @pretty ruleList blankline ;
 @pretty blockContent block indent ;
 @pretty ruleBlock off ;
-@pretty qualifiedRule group nobreak ;
+@pretty selectorSpan split(",") group sep(", ") ;
+@pretty qualifiedRule nobreak ;
 @pretty declaration group ;
 @pretty atRule group nobreak ;

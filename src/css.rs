@@ -11,64 +11,9 @@ use crate::{PrinterConfig, SourceRange, ToDoc};
 )]
 pub struct CssParser;
 
-/// Split a CSS selector string on commas, respecting parentheses and brackets.
-/// Handles `:is(.a, .b)`, `:not([href])`, `[attr="x,y"]`, and nested parens.
-fn split_selectors(text: &str) -> Vec<&str> {
-    let mut result = Vec::new();
-    let mut depth = 0u32;
-    let mut start = 0;
-    for (i, b) in text.bytes().enumerate() {
-        match b {
-            b'(' | b'[' => depth += 1,
-            b')' | b']' => depth = depth.saturating_sub(1),
-            b',' if depth == 0 => {
-                result.push(text[start..i].trim());
-                start = i + 1;
-            }
-            _ => {}
-        }
-    }
-    result.push(text[start..].trim());
-    result
-}
-
 impl<'a> ToDoc<'a> for CssParserEnum<'a> {
     fn to_doc(&self) -> pprint::Doc<'a> {
-        match self {
-            // Override: selector lists use ",\n" when breaking, ", " when inline.
-            CssParserEnum::qualifiedRule((selector, block)) => {
-                let selector_doc = if let CssParserEnum::selectorSpan(span) = selector.as_ref() {
-                    let text = span.as_str();
-                    let selectors = split_selectors(text);
-                    if selectors.len() > 1 {
-                        let break_sep = pprint::Doc::IfBreak(
-                            Box::new(
-                                pprint::Doc::Char(b',')
-                                    + pprint::Doc::Hardline,
-                            ),
-                            Box::new(pprint::Doc::String(std::borrow::Cow::Borrowed(", "))),
-                        );
-                        let mut body = pprint::Doc::String(
-                            std::borrow::Cow::Borrowed(selectors[0]),
-                        );
-                        for sel in &selectors[1..] {
-                            body = body
-                                + break_sep.clone()
-                                + pprint::Doc::String(std::borrow::Cow::Borrowed(sel));
-                        }
-                        pprint::Doc::Group(Box::new(body))
-                    } else {
-                        selector.to_doc()
-                    }
-                } else {
-                    selector.to_doc()
-                };
-                selector_doc
-                    + pprint::Doc::String(std::borrow::Cow::Borrowed(" "))
-                    + block.to_doc()
-            }
-            _ => CssParserEnum::to_doc(self),
-        }
+        CssParserEnum::to_doc(self)
     }
 }
 
@@ -189,5 +134,32 @@ mod tests {
         let output = result.unwrap();
         assert!(output.contains("color"), "should contain property");
         assert!(output.contains("red"), "should contain value");
+    }
+
+    #[test]
+    fn test_prettify_multi_selector() {
+        let config = PrinterConfig::default();
+        let input = "h1, h2, h3 { color: red; }";
+        let result = prettify_css(input, &config).unwrap();
+        // Multi-selector rules should contain all selectors
+        assert!(result.contains("h1"), "should contain h1");
+        assert!(result.contains("h2"), "should contain h2");
+        assert!(result.contains("h3"), "should contain h3");
+        // Should be idempotent
+        let second = prettify_css(&result, &config).unwrap();
+        assert_eq!(result.trim(), second.trim(), "multi-selector prettify should be idempotent");
+    }
+
+    #[test]
+    fn test_prettify_selector_with_pseudo_class() {
+        let config = PrinterConfig::default();
+        let input = ":is(.a, .b), .c { color: red; }";
+        let result = prettify_css(input, &config).unwrap();
+        // Commas inside :is() should NOT split the selector
+        assert!(result.contains(":is(.a, .b)"), "should preserve :is() pseudo-class");
+        assert!(result.contains(".c"), "should contain .c selector");
+        // Should be idempotent
+        let second = prettify_css(&result, &config).unwrap();
+        assert_eq!(result.trim(), second.trim(), "pseudo-class selector prettify should be idempotent");
     }
 }

@@ -18,7 +18,7 @@ name = "gorgeous"
 path = "src/lib.rs"
 
 [dependencies]
-parse_that = { version = "0.2", features = ["diagnostics"] }
+parse_that = { version = "0.3", features = ["diagnostics"] }
 bbnf_derive = "0.2"
 bbnf = "0.2"
 pprint = "0.3"
