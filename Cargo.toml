@@ -1,6 +1,6 @@
 [package]
 name = "gorgeous"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 license = "MIT"
 description = "Grammar-driven pretty printers auto-generated from BBNF grammars"
@@ -18,10 +18,10 @@ name = "gorgeous"
 path = "src/lib.rs"
 
 [dependencies]
-parse_that = "0.1.1"
-bbnf_derive = "0.2.0"
-bbnf = "0.2.0"
-pprint = "0.3.1"
+parse_that = { version = "0.2", features = ["diagnostics"] }
+bbnf_derive = "0.2"
+bbnf = "0.2"
+pprint = "0.3"
 mimalloc = "0.1"
 
 [dev-dependencies]
