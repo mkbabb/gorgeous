@@ -14,10 +14,13 @@ src/
   bnf.rs               # BNF prettifier — 5 tests, idempotent multi-rule
   bbnf.rs              # BBNF prettifier — 5 tests, idempotent multi-rule
   css.rs               # CSS prettifier — 8 tests, nested rules, media queries
+  tests/
+  biome_compare.rs     # Output comparison tests: biome vs gorgeous
+  biome_compare2.rs    # Output size ratio tests across files
 benches/
-  gorgeous.rs          # 19 benchmarks: JSON + CSS
+  gorgeous.rs          # 32 benchmarks: JSON + CSS + biome, phase splits
 data/json/             # benchmark datasets (data.json 35KB, canada.json 2.2MB)
-data/css/              # benchmark datasets (normalize.css 1.8KB, app.css 6.3KB)
+data/css/              # benchmark datasets (normalize 1.8KB, app 6.3KB, bootstrap 281KB, tailwind 3.8MB)
 ```
 
 ## Build
@@ -66,7 +69,7 @@ All from crates.io:
 - `pprint` — Wadler-Lindig pretty-printer (uses `rustc-hash` FxHashMap internally)
 - `mimalloc` — global allocator
 
-Dev: `bencher` (harness for `[[bench]]`).
+Dev: `bencher` (harness for `[[bench]]`), `biome_css_parser`/`biome_css_formatter` v0.4.0 (benchmark competitor).
 
 ## Languages
 
@@ -80,15 +83,15 @@ All five built-in, all tests pass (31 total):
 
 ## Benchmark Throughput
 
-| Benchmark | Throughput |
-|-----------|-----------|
-| JSON data.json cached | ~169 MB/s |
-| JSON canada.json cached | ~72 MB/s |
-| JSON data.json parse only | ~1,046 MB/s |
-| CSS app.css cached | ~24 MB/s |
-| CSS app.css parse only | ~34 MB/s |
-| CSS app.css to_doc only | ~184 MB/s |
-| CSS app.css render only | ~205 MB/s |
+| Benchmark | Gorgeous | Biome | Speedup |
+|-----------|----------|-------|---------|
+| CSS app.css (6KB) | 46 MB/s | 11 MB/s | 4.2x |
+| CSS bootstrap (281KB) | 323 MB/s | 17 MB/s | 19x |
+| CSS tailwind (3.8MB) | 33 MB/s | 14 MB/s | 2.4x |
+| JSON data.json (35KB) | 107 MB/s | — | — |
+| JSON canada.json (2.2MB) | 26 MB/s | — | — |
+
+Phase breakdown (bootstrap): parse 634 MB/s, to_doc 1,319 MB/s, render 1,381 MB/s.
 
 ## Conventions
 
@@ -96,6 +99,7 @@ All five built-in, all tests pass (31 total):
 - Crate name `gorgeous`, lib name `gorgeous`, binary name `gorg`
 - Each language module: `#[derive(Parser)]` + `impl ToDoc` + `impl SourceRange` + `prettify_X()` entry point
 - Grammar files bundled in `grammar/` — `@pretty` directives control doc generation
+- CSS `to_doc()` override: paren/bracket-aware selector splitting — `:is(.a, .b)` preserved, top-level commas break one-per-line via IfBreak
 - CSS grammar: `css-stylesheet-pretty.bbnf` (standalone, no imports); `css-fast.bbnf` available for JIT
 - `PrinterConfig` controls `max_width`, `indent`, `use_tabs` — passed to `pprint::Printer`
 - `range_to_doc()` — partial formatting, emits verbatim source for non-overlapping nodes
