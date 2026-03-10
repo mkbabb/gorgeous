@@ -85,13 +85,12 @@ All five built-in, all tests pass (31 total):
 
 | Benchmark | Gorgeous | Biome | Speedup |
 |-----------|----------|-------|---------|
-| CSS app.css (6KB) | 46 MB/s | 11 MB/s | 4.2x |
-| CSS bootstrap (281KB) | 323 MB/s | 17 MB/s | 19x |
-| CSS tailwind (3.8MB) | 33 MB/s | 14 MB/s | 2.4x |
-| JSON data.json (35KB) | 107 MB/s | — | — |
-| JSON canada.json (2.2MB) | 26 MB/s | — | — |
+| CSS app.css (6KB) | 50 MB/s | 11 MB/s | 4.5x |
+| CSS bootstrap (281KB) | 342 MB/s | 17 MB/s | 20x |
+| CSS tailwind (3.8MB) | 36 MB/s | 8 MB/s | 4.5x |
+| JSON data.json (35KB) | 115 MB/s | — | — |
 
-Phase breakdown (bootstrap): parse 634 MB/s, to_doc 1,319 MB/s, render 1,381 MB/s.
+Phase breakdown (bootstrap): parse 654 MB/s, to_doc 1,450 MB/s, render 1,428 MB/s.
 
 ## Conventions
 
@@ -99,7 +98,7 @@ Phase breakdown (bootstrap): parse 634 MB/s, to_doc 1,319 MB/s, render 1,381 MB/
 - Crate name `gorgeous`, lib name `gorgeous`, binary name `gorg`
 - Each language module: `#[derive(Parser)]` + `impl ToDoc` + `impl SourceRange` + `prettify_X()` entry point
 - Grammar files bundled in `grammar/` — `@pretty` directives control doc generation
-- CSS `to_doc()` override: paren/bracket-aware selector splitting — `:is(.a, .b)` preserved, top-level commas break one-per-line via IfBreak
+- CSS formatting is purely grammar-driven — `@pretty selectorSpan split(",") group sep(", ")` handles selector splitting via `split_balanced()` at format time (zero manual overrides)
 - CSS grammar: `css-stylesheet-pretty.bbnf` (standalone, no imports); `css-fast.bbnf` available for JIT
 - `PrinterConfig` controls `max_width`, `indent`, `use_tabs` — passed to `pprint::Printer`
 - `range_to_doc()` — partial formatting, emits verbatim source for non-overlapping nodes

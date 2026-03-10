@@ -72,34 +72,42 @@ The `@pretty` directives annotate grammar rules with formatting hints:
 
 | Hint | Effect |
 |------|--------|
-| `group` | Wrap in `Doc::Group` — try flat, break if too wide |
+| `group` | Wrap in `Doc::Group` -- try flat, break if too wide |
 | `block` | Hardline-separated items |
 | `indent` | Indent children |
 | `blankline` | Double hardline between items |
 | `softbreak` | Softline separators |
 | `nobreak` | Space-only separators (no line breaks) |
-| `fast` | `Join` instead of `SmartJoin` — linear, no DP justification |
+| `fast` | `Join` instead of `SmartJoin` -- linear, no DP justification |
+| `sep("...")` | Custom separator string; with `group`, uses `IfBreak(trimmed + Hardline, sep)` |
+| `split("...")` | Format-time balanced splitting of opaque Spans via `split_balanced()` |
 
 `range_to_doc()` enables partial formatting: nodes outside the target range emit
 verbatim source text, nodes inside emit formatted `Doc` trees.
 
 ## Performance
 
-Phase-split CSS throughput (app.css):
+End-to-end cached throughput (parse + to_doc + render):
+
+| Benchmark | Gorgeous | Biome | Speedup |
+|-----------|----------|-------|---------|
+| CSS app.css (6KB) | 50 MB/s | 11 MB/s | 4.5x |
+| CSS bootstrap (281KB) | 342 MB/s | 17 MB/s | 20x |
+| CSS tailwind (3.8MB) | 36 MB/s | 8 MB/s | 4.5x |
+| JSON data.json (35KB) | 115 MB/s | -- | -- |
+
+Phase breakdown (bootstrap 281KB):
 
 | Phase | Throughput |
 |-------|-----------|
-| to_doc | ~114 MB/s |
-| pprint render | ~86 MB/s |
+| parse | 654 MB/s |
+| to_doc | 1,450 MB/s |
+| render | 1,428 MB/s |
+| **e2e (cached)** | **342 MB/s** |
 
-End-to-end cached throughput:
-
-| Benchmark | Throughput |
-|-----------|-----------|
-| JSON data.json | ~97 MB/s |
-| JSON canada.json | ~42 MB/s |
-| CSS normalize.css | ~23 MB/s |
-| CSS app.css | ~23 MB/s |
+Gorgeous is **4.5--20x faster than biome** depending on file size, with zero
+hand-written formatting code -- all formatting is grammar-driven via `@pretty`
+directives and `split_balanced()` for format-time balanced splitting.
 
 ## Dependencies
 
