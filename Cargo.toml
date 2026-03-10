@@ -22,6 +22,7 @@ parse_that = { version = "0.3", features = ["diagnostics"] }
 bbnf_derive = "0.2"
 bbnf = "0.2"
 pprint = "0.3"
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mimalloc = "0.1"
 
 [dev-dependencies]
