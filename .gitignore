@@ -3,3 +3,11 @@ Cargo.lock
 
 .cargo/
 .DS_Store
+.claude/
+data/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Screenshot artifacts (root only, not assets/)
+/*.png
