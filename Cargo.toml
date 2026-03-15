@@ -17,10 +17,15 @@ path = "src/main.rs"
 name = "gorgeous"
 path = "src/lib.rs"
 
+[features]
+default = []
+vm = ["dep:bbnf-ir"]
+
 [dependencies]
 parse_that = { version = "0.3", features = ["diagnostics"] }
 bbnf_derive = "0.2"
 bbnf = "0.2"
+bbnf-ir = { version = "0.1", optional = true }
 pprint = "0.3"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mimalloc = "0.1"

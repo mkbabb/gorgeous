@@ -9,6 +9,8 @@ pub mod bbnf;
 pub mod ebnf;
 pub mod bnf;
 pub mod css;
+#[cfg(feature = "vm")]
+pub mod vm;
 
 /// Configuration for the prettifier output.
 #[derive(Debug, Clone)]
