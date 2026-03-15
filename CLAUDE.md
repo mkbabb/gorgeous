@@ -88,16 +88,16 @@ All six built-in, all tests pass (37 total):
 
 ## Benchmark Throughput
 
-| Benchmark | Gorgeous | Biome | Speedup |
+| Benchmark | Gorgeous (cached) | Biome | Speedup |
 |-----------|----------|-------|---------|
-| CSS app.css (6KB) | 41 MB/s | 10 MB/s | 3.9x |
-| CSS normalize (6KB) | 42 MB/s | — | — |
-| CSS bootstrap (281KB) | 289 MB/s | 15 MB/s | 19.3x |
-| CSS tailwind (3.8MB) | 30 MB/s | 12 MB/s | 2.5x |
-| JSON data.json (35KB) | 94 MB/s | — | — |
-| JSON canada.json (2.2MB) | 24 MB/s | — | — |
+| CSS app.css (6KB) | 54 MB/s | 10 MB/s | 5.4x |
+| CSS normalize (6KB) | 67 MB/s | — | — |
+| CSS bootstrap (281KB) | 415 MB/s | 16 MB/s | 25.9x |
+| CSS tailwind (3.8MB) | 45 MB/s | 14 MB/s | 3.2x |
+| JSON data.json (35KB) | 115 MB/s | — | — |
+| JSON canada.json (2.2MB) | 26 MB/s | — | — |
 
-Phase breakdown (bootstrap): parse 572 MB/s, to_doc 1,314 MB/s, render 1,261 MB/s.
+Phase breakdown (bootstrap): parse 2,843 MB/s, to_doc 1,038 MB/s, render 1,140 MB/s.
 
 ## Conventions
 
