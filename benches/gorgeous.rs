@@ -4,6 +4,7 @@ use bencher::{benchmark_group, benchmark_main, Bencher};
 use pprint::{pprint as render, pprint_ref};
 use gorgeous::json::prettify_json;
 use gorgeous::css::{prettify_css, CssParser};
+use gorgeous::google_sheets::{prettify_formula, GoogleSheetsParser};
 use gorgeous::{PrinterConfig, ToDoc};
 
 // ── Data loaders ─────────────────────────────────────────────────────────────
@@ -446,6 +447,195 @@ fn bench_biome_css_app(b: &mut Bencher) {
     });
 }
 
+// ── Google Sheets formulas ────────────────────────────────────────────────────
+
+const GS_SIMPLE: &str = "=SUM(A1:A10)";
+
+const GS_LET: &str = r#"=LET(data, A1:Z100, filtered, FILTER(data, INDEX(data,,1)>0), count, ROWS(filtered), IF(count>0, MAKEARRAY(count, 3, LAMBDA(r, c, INDEX(filtered, r, c))), "No data"))"#;
+
+const GS_PATHOLOGICAL: &str = r#"=LET(raw, A2:E1000, filtered, FILTER(raw, (INDEX(raw,,3)>100)*(INDEX(raw,,5)="Active")), sorted, SORT(filtered, 3, FALSE), IF(ROWS(sorted)>0, MAP(SEQUENCE(MIN(10, ROWS(sorted))), LAMBDA(i, INDEX(sorted, i, 1)&" - "&TEXT(INDEX(sorted, i, 3), "$#,##0"))), "No results"))"#;
+
+/// Generate a large formula by repeating LET bindings: =LET(a0, SUM(A1:A10), a1, ..., body)
+fn generate_large_formula(n_bindings: usize) -> String {
+    let mut parts = Vec::with_capacity(n_bindings * 2 + 1);
+    for i in 0..n_bindings {
+        parts.push(format!("v{}", i));
+        parts.push(format!("IF(v{}>0, FILTER(A1:Z100, INDEX(A1:Z100,,{})>0), SUM(A1:A{}))", i, i + 1, i + 10));
+    }
+    parts.push(format!("v{}", n_bindings - 1));
+    format!("=LET({})", parts.join(", "))
+}
+
+// ── Google Sheets end-to-end benchmarks ─────────────────────────────────────
+
+fn bench_gs_simple(b: &mut Bencher) {
+    let config = PrinterConfig::default();
+    b.bytes = GS_SIMPLE.len() as u64;
+    b.iter(|| {
+        prettify_formula(GS_SIMPLE, &config).unwrap();
+    });
+}
+
+fn bench_gs_let(b: &mut Bencher) {
+    let config = PrinterConfig::default();
+    b.bytes = GS_LET.len() as u64;
+    b.iter(|| {
+        prettify_formula(GS_LET, &config).unwrap();
+    });
+}
+
+fn bench_gs_pathological(b: &mut Bencher) {
+    let config = PrinterConfig::default();
+    b.bytes = GS_PATHOLOGICAL.len() as u64;
+    b.iter(|| {
+        prettify_formula(GS_PATHOLOGICAL, &config).unwrap();
+    });
+}
+
+fn bench_gs_1kb(b: &mut Bencher) {
+    let input = generate_large_formula(10);
+    let config = PrinterConfig::default();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        prettify_formula(&input, &config).unwrap();
+    });
+}
+
+fn bench_gs_10kb(b: &mut Bencher) {
+    let input = generate_large_formula(100);
+    let config = PrinterConfig::default();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        prettify_formula(&input, &config).unwrap();
+    });
+}
+
+// ── Google Sheets cached benchmarks ─────────────────────────────────────────
+
+fn bench_gs_pathological_cached(b: &mut Bencher) {
+    let config = PrinterConfig::default();
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = GS_PATHOLOGICAL.len() as u64;
+    b.iter(|| {
+        let ast = parser.parse(GS_PATHOLOGICAL).unwrap();
+        render(ast.to_doc(), config.to_printer())
+    });
+}
+
+fn bench_gs_1kb_cached(b: &mut Bencher) {
+    let input = generate_large_formula(10);
+    let config = PrinterConfig::default();
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        let ast = parser.parse(&input).unwrap();
+        render(ast.to_doc(), config.to_printer())
+    });
+}
+
+fn bench_gs_10kb_cached(b: &mut Bencher) {
+    let input = generate_large_formula(100);
+    let config = PrinterConfig::default();
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        let ast = parser.parse(&input).unwrap();
+        render(ast.to_doc(), config.to_printer())
+    });
+}
+
+// ── Google Sheets phase-split benchmarks ────────────────────────────────────
+
+fn bench_gs_pathological_parse_only(b: &mut Bencher) {
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = GS_PATHOLOGICAL.len() as u64;
+    b.iter(|| {
+        parser.parse(GS_PATHOLOGICAL).unwrap()
+    });
+}
+
+fn bench_gs_pathological_to_doc_only(b: &mut Bencher) {
+    let parser = GoogleSheetsParser::formula();
+    let ast = parser.parse(GS_PATHOLOGICAL).unwrap();
+    b.bytes = GS_PATHOLOGICAL.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_gs_pathological_render_only(b: &mut Bencher) {
+    let config = PrinterConfig::default();
+    let parser = GoogleSheetsParser::formula();
+    let ast = parser.parse(GS_PATHOLOGICAL).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = GS_PATHOLOGICAL.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
+    });
+}
+
+fn bench_gs_1kb_parse_only(b: &mut Bencher) {
+    let input = generate_large_formula(10);
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_gs_1kb_to_doc_only(b: &mut Bencher) {
+    let input = generate_large_formula(10);
+    let parser = GoogleSheetsParser::formula();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_gs_1kb_render_only(b: &mut Bencher) {
+    let input = generate_large_formula(10);
+    let config = PrinterConfig::default();
+    let parser = GoogleSheetsParser::formula();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
+    });
+}
+
+fn bench_gs_10kb_parse_only(b: &mut Bencher) {
+    let input = generate_large_formula(100);
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_gs_10kb_to_doc_only(b: &mut Bencher) {
+    let input = generate_large_formula(100);
+    let parser = GoogleSheetsParser::formula();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_gs_10kb_render_only(b: &mut Bencher) {
+    let input = generate_large_formula(100);
+    let config = PrinterConfig::default();
+    let parser = GoogleSheetsParser::formula();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
+    });
+}
+
 // ── Groups ───────────────────────────────────────────────────────────────────
 
 benchmark_group!(
@@ -506,7 +696,38 @@ benchmark_group!(
     bench_json_data_to_doc_only,
     bench_json_data_render_only,
     bench_json_canada_parse_only,
+    bench_json_canada_to_doc_only,
+    bench_json_canada_render_only,
 );
 
-benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, biome_benches, json_phase_benches);
+benchmark_group!(
+    gs_benches,
+    bench_gs_simple,
+    bench_gs_let,
+    bench_gs_pathological,
+    bench_gs_1kb,
+    bench_gs_10kb,
+);
+
+benchmark_group!(
+    gs_cached_benches,
+    bench_gs_pathological_cached,
+    bench_gs_1kb_cached,
+    bench_gs_10kb_cached,
+);
+
+benchmark_group!(
+    gs_phase_benches,
+    bench_gs_pathological_parse_only,
+    bench_gs_pathological_to_doc_only,
+    bench_gs_pathological_render_only,
+    bench_gs_1kb_parse_only,
+    bench_gs_1kb_to_doc_only,
+    bench_gs_1kb_render_only,
+    bench_gs_10kb_parse_only,
+    bench_gs_10kb_to_doc_only,
+    bench_gs_10kb_render_only,
+);
+
+benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, biome_benches, json_phase_benches, gs_benches, gs_cached_benches, gs_phase_benches);
 
