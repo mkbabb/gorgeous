@@ -33,8 +33,9 @@ let formatted = prettify_json_range(input, 100..200, &config);
 | EBNF | 4 | `ebnf.bbnf` | `prettify_ebnf()` |
 | BNF | 5 | `bnf.bbnf` | `prettify_bnf()` |
 | BBNF | 5 | `bbnf.bbnf` | `prettify_bbnf()` |
+| Google Sheets | 6 | `google-sheets.bbnf` | `prettify_formula()` |
 
-All 31 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
+All 37 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
 
 ## CLI
 
@@ -64,8 +65,11 @@ Grammar (.bbnf)
     → AST (enum)           typed parse tree
       → to_doc()           @pretty-directed Doc emission
         → Doc tree         pprint intermediate representation
-          → pprint()       Wadler-Lindig pretty-printer
+          → pprint()       Wadler-Lindig-inspired pretty-printer
             → String       formatted output
+
+Alternative: VM interpreter (feature = "vm")
+  Grammar (.bbnf) → bbnf-ir bytecode → runtime interpret → Doc tree → pprint()
 ```
 
 The `@pretty` directives annotate grammar rules with formatting hints:
@@ -107,9 +111,10 @@ Phase breakdown (bootstrap 281KB):
 | render | 1,261 MB/s |
 | **e2e (cached)** | **289 MB/s** |
 
-Gorgeous is **2.5--19x faster than biome** depending on file size, with zero
-hand-written formatting code -- all formatting is grammar-driven via `@pretty`
-directives and `split_balanced()` for format-time balanced splitting.
+Gorgeous is **2.5--19x faster than biome** depending on file size. The derive path
+uses zero hand-written formatting code—all formatting is grammar-driven via `@pretty`
+directives and `split_balanced()` for format-time balanced splitting. The VM path
+interprets `bbnf-ir` bytecode at runtime for grammars not compiled via `#[derive(Parser)]`.
 
 ## Dependencies
 
@@ -120,13 +125,14 @@ All from crates.io:
 - [`bbnf`](https://github.com/mkbabb/bbnf-lang) — grammar analysis
 - [`pprint`](https://github.com/mkbabb/pprint) — Wadler-Lindig pretty-printer
 
-Dev: `bencher` for `[[bench]]` harness.
+Dev: `bencher` for `[[bench]]` harness, `biome_css_parser`/`biome_css_formatter` v0.4.0 (benchmark competitor).
 
 ## Build
 
 ```bash
-cargo test --lib                # 31 tests
-cargo bench --bench gorgeous    # 12 benchmarks (JSON 6 + CSS 6)
+cargo test --lib                # 37 tests
+cargo test --lib --features vm  # + VM tests
+cargo bench --bench gorgeous    # 51 benchmarks (JSON + CSS + GS + biome, phase splits)
 cargo clippy -- -D warnings
 ```
 

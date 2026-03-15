@@ -14,11 +14,14 @@ src/
   bnf.rs               # BNF prettifier — 5 tests, idempotent multi-rule
   bbnf.rs              # BBNF prettifier — 5 tests, idempotent multi-rule
   css.rs               # CSS prettifier — 8 tests, nested rules, media queries
-  tests/
+  google_sheets.rs     # Google Sheets formula prettifier
+  vm.rs                # VM interpreter for runtime @pretty (feature = "vm")
+tests/
   biome_compare.rs     # Output comparison tests: biome vs gorgeous
   biome_compare2.rs    # Output size ratio tests across files
+examples/              # Example usage
 benches/
-  gorgeous.rs          # 32 benchmarks: JSON + CSS + biome, phase splits
+  gorgeous.rs          # 51 benchmarks: JSON + CSS + GS + biome, phase splits
 data/json/             # benchmark datasets (data.json 35KB, canada.json 2.2MB)
 data/css/              # benchmark datasets (normalize 1.8KB, app 6.3KB, bootstrap 281KB, tailwind 3.8MB)
 ```
@@ -66,20 +69,22 @@ All from crates.io:
 - `parse_that` — parser combinator library
 - `bbnf_derive` — proc-macro: `#[derive(Parser)]` from `.bbnf` files
 - `bbnf` — grammar parser (used at runtime for JIT rule extraction)
-- `pprint` — Wadler-Lindig pretty-printer (uses `rustc-hash` FxHashMap internally)
+- `pprint` — Wadler-Lindig-inspired pretty-printer (uses `rustc-hash` FxHashMap internally)
+- `bbnf-ir` — bytecode IR (optional, behind `vm` feature)
 - `mimalloc` — global allocator
 
 Dev: `bencher` (harness for `[[bench]]`), `biome_css_parser`/`biome_css_formatter` v0.4.0 (benchmark competitor).
 
 ## Languages
 
-All five built-in, all tests pass (31 total):
+All six built-in, all tests pass (37 total):
 
 - JSON — 9 tests, range formatting via `prettify_json_range()`
 - EBNF — 4 tests, idempotent multi-rule
 - BNF — 5 tests, idempotent multi-rule
 - BBNF — 5 tests, idempotent multi-rule
 - CSS — 8 tests, nested rules, media queries, `css-stylesheet-pretty.bbnf`
+- Google Sheets — 6 tests, nested formulas, LET/LAMBDA
 
 ## Benchmark Throughput
 
