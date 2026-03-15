@@ -148,6 +148,17 @@ fn bench_css_bootstrap_cached(b: &mut Bencher) {
 fn bench_css_bootstrap_parse_only(b: &mut Bencher) {
     let input = load_css_bootstrap();
     let parser = CssParser::stylesheet();
+    // Report consumption — grammar uses L1 opaque spans, so throughput
+    // reflects span-scanning speed, not full structured parsing.
+    let (result, state) = parser.parse_return_state(&input);
+    assert!(result.is_some(), "CSS bootstrap parse failed");
+    let pct = state.offset * 100 / input.len().max(1);
+    if pct < 95 {
+        eprintln!(
+            "  NOTE: bootstrap parse consumed {pct}% \
+             (L1 opaque spans — throughput is span-scan speed)"
+        );
+    }
     b.bytes = input.len() as u64;
     b.iter(|| {
         parser.parse(&input).unwrap()
@@ -219,6 +230,15 @@ fn bench_json_canada_cached(b: &mut Bencher) {
 fn bench_css_app_parse_only(b: &mut Bencher) {
     let input = load_css_app();
     let parser = CssParser::stylesheet();
+    let (result, state) = parser.parse_return_state(&input);
+    assert!(result.is_some(), "CSS app parse failed");
+    let pct = state.offset * 100 / input.len().max(1);
+    if pct < 95 {
+        eprintln!(
+            "  NOTE: app parse consumed {pct}% \
+             (L1 opaque spans — throughput is span-scan speed)"
+        );
+    }
     b.bytes = input.len() as u64;
     b.iter(|| {
         parser.parse(&input).unwrap()
@@ -253,6 +273,10 @@ fn bench_json_data_parse_only(b: &mut Bencher) {
     use gorgeous::json::JsonParser;
     let input = load_json_data();
     let parser = JsonParser::value();
+    let (result, state) = parser.parse_return_state(&input);
+    assert!(result.is_some(), "JSON data parse failed");
+    let pct = state.offset * 100 / input.len().max(1);
+    assert!(pct >= 95, "only consumed {pct}% — grammar is incomplete");
     b.bytes = input.len() as u64;
     b.iter(|| {
         parser.parse(&input).unwrap()
@@ -286,9 +310,37 @@ fn bench_json_canada_parse_only(b: &mut Bencher) {
     use gorgeous::json::JsonParser;
     let input = load_json_canada();
     let parser = JsonParser::value();
+    let (result, state) = parser.parse_return_state(&input);
+    assert!(result.is_some(), "JSON canada parse failed");
+    let pct = state.offset * 100 / input.len().max(1);
+    assert!(pct >= 95, "only consumed {pct}% — grammar is incomplete");
     b.bytes = input.len() as u64;
     b.iter(|| {
         parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_json_canada_to_doc_only(b: &mut Bencher) {
+    use gorgeous::json::JsonParser;
+    let input = load_json_canada();
+    let parser = JsonParser::value();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_json_canada_render_only(b: &mut Bencher) {
+    use gorgeous::json::JsonParser;
+    let input = load_json_canada();
+    let config = PrinterConfig::default();
+    let parser = JsonParser::value();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
     });
 }
 
@@ -317,6 +369,15 @@ fn bench_css_tailwind_cached(b: &mut Bencher) {
 fn bench_css_tailwind_parse_only(b: &mut Bencher) {
     let input = load_css_tailwind();
     let parser = CssParser::stylesheet();
+    let (result, state) = parser.parse_return_state(&input);
+    assert!(result.is_some(), "CSS tailwind parse failed");
+    let pct = state.offset * 100 / input.len().max(1);
+    if pct < 95 {
+        eprintln!(
+            "  NOTE: tailwind parse consumed {pct}% \
+             (L1 opaque spans — throughput is span-scan speed)"
+        );
+    }
     b.bytes = input.len() as u64;
     b.iter(|| {
         parser.parse(&input).unwrap()
