@@ -47,6 +47,64 @@ mod tests {
         assert!(parse_formula(input).is_some(), "pathological should parse");
     }
 
+    /// Multiline LET with column-only ranges, nested LAMBDA/LET, and equality comparisons.
+    #[test]
+    fn test_multiline_let_with_column_ranges() {
+        let input = r#"=LET(
+  scale, DURATION,
+
+  psus, FILTER(B3:B, B3:B <> ""),
+  providers, H2:O2,
+  recurring, FILTER(H3:O, B3:B <> ""),
+
+  normalize, LAMBDA(x, LOWER(TRIM(TO_TEXT(x)))),
+
+  sheet1Psus, ARRAYFORMULA(Sheet1!C2:C),
+  sheet1Providers, ARRAYFORMULA(Sheet1!B2:B),
+  oneTimeCosts, Sheet1!AD2:AD,
+
+  values,
+    MAKEARRAY(
+      ROWS(psus),
+      COLUMNS(providers),
+      LAMBDA(r, c,
+        LET(
+          psu, INDEX(psus, r),
+          provider, INDEX(providers, c),
+          monthlyValue, N(INDEX(recurring, r, c)),
+          oneTimeCost,
+            IFERROR(
+              INDEX(
+                oneTimeCosts,
+                MATCH(
+                  1,
+                  (sheet1Psus = psu) * (sheet1Providers = provider),
+                  0
+                )
+              ),
+              0
+            ),
+          IF(monthlyValue > 0, monthlyValue * scale + N(oneTimeCost), 0)
+        )
+      )
+    ),
+
+  VSTACK(providers, values)
+)"#;
+        let ast = parse_formula(input);
+        assert!(ast.is_some(), "multiline LET with column ranges should parse (AOT)");
+
+        let config = PrinterConfig::new(80, 2);
+        let formatted = prettify_formula(input, &config).unwrap();
+        eprintln!("AOT multiline:\n{}", formatted);
+        assert!(formatted.contains("LET"), "AOT formatted should contain LET");
+        assert!(formatted.contains('\n'), "AOT formatted should have line breaks");
+
+        // Without leading =
+        let no_eq = &input[1..];
+        assert!(parse_formula(no_eq).is_some(), "formula without = should parse (AOT)");
+    }
+
     #[test]
     fn test_trailing_space_formatting() {
         let config = PrinterConfig::new(80, 2);
