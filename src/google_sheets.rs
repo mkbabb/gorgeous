@@ -46,4 +46,16 @@ mod tests {
         let input = r#"=LET(raw, A2:E1000, filtered, FILTER(raw, (INDEX(raw,,3)>100)*(INDEX(raw,,5)="Active")), sorted, SORT(filtered, 3, FALSE), IF(ROWS(sorted)>0, MAP(SEQUENCE(MIN(10, ROWS(sorted))), LAMBDA(i, INDEX(sorted, i, 1)&" - "&TEXT(INDEX(sorted, i, 3), "$#,##0"))), "No results"))"#;
         assert!(parse_formula(input).is_some(), "pathological should parse");
     }
+
+    #[test]
+    fn test_trailing_space_formatting() {
+        let config = PrinterConfig::new(80, 2);
+        let without_space = r#"=LET(raw, A2:E1000, filtered, FILTER(raw, (INDEX(raw,,3)>100)*(INDEX(raw,,5)="Active")), sorted, SORT(filtered, 3, FALSE), IF(ROWS(sorted)>0, MAP(SEQUENCE(MIN(10, ROWS(sorted))), LAMBDA(i, INDEX(sorted, i, 1)&" - "&TEXT(INDEX(sorted, i, 3), "$#,##0"))), "No results"))"#;
+        let with_space = r#"=LET(raw, A2:E1000, filtered, FILTER(raw, (INDEX(raw,,3)>100)*(INDEX(raw,,5)="Active")), sorted, SORT(filtered, 3, FALSE), IF(ROWS(sorted)>0, MAP(SEQUENCE(MIN(10, ROWS(sorted))), LAMBDA(i, INDEX(sorted, i, 1)&" - "&TEXT(INDEX(sorted, i, 3), "$#,##0"))), "No results") )"#;
+        let fmt_without = prettify_formula(without_space, &config).unwrap();
+        let fmt_with = prettify_formula(with_space, &config).unwrap();
+        eprintln!("AOT without space:\n{}", fmt_without);
+        eprintln!("AOT with space:\n{}", fmt_with);
+        assert_eq!(fmt_without, fmt_with, "trailing space should not change AOT formatting");
+    }
 }
