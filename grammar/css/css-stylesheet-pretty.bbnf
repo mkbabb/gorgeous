@@ -16,7 +16,8 @@ optSemicolon = ";" ? ;
 // Group property+colon and value+semicolon as separate units so the
 // @pretty separator inserts space only at the colon-value boundary.
 declProperty = propertyName ?w , ":" ;
-declValue    = valueSpan , ("," ?w , valueSpan) * , important ? , optSemicolon ;
+valueList    = valueSpan , ("," ?w , valueSpan) * ;
+declValue    = valueList ? , important ? , optSemicolon ;
 declaration  = declProperty ?w , declValue ?w ;
 
 @recover declaration /[^;{}]+;/ ;
@@ -24,7 +25,7 @@ declaration  = declProperty ?w , declValue ?w ;
 // Block contents: declarations and nested rules (CSS Nesting Level 1)
 // This creates the structural cycle: blockContent → ruleItem → ... → ruleBlock → blockContent
 blockContent = (ws , (declaration | ruleItem) ?w) * ;
-ruleBlock    = "{" ?w , blockContent ?w , "}" ;
+ruleBlock    = "{" ?w , blockContent , ws , "}" ;
 
 // Qualified rules
 qualifiedRule = selectorSpan ?w , ruleBlock ;
@@ -50,7 +51,7 @@ ruleItem = qualifiedRule | atRule ;
 ruleList   = (ws , ruleItem ?w) * ;
 
 // Entry point
-stylesheet = ws , ruleList ?w ;
+stylesheet = ws , ruleList , ws ;
 
 @pretty stylesheet block ;
 @pretty ruleList blankline ;
