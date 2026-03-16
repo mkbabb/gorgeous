@@ -106,6 +106,38 @@ mod tests {
     }
 
     #[test]
+    fn test_let_parses_as_let_call() {
+        let ast = parse_formula("=LET(a, 1, b)").unwrap();
+        let ast_debug = format!("{:?}", ast);
+        assert!(ast_debug.contains("let_call"), "=LET(a,1,b) should parse as let_call, not func_call");
+    }
+
+    #[test]
+    fn test_let_binding_pair_formatting() {
+        let config = PrinterConfig::new(80, 2);
+        // Short LETs — everything fits on one line
+        let tests_short = [
+            ("=LET(a, 1, a)", "short"),
+            ("=LET(scale, DURATION, scale)", "medium"),
+            ("=LET(x, SUM(A1:A10), x)", "func-value"),
+        ];
+        for (input, label) in tests_short {
+            let formatted = prettify_formula(input, &config).unwrap();
+            eprintln!("AOT {label}: {input:40} → {formatted:?}");
+        }
+
+        // Multi-binding LET that overflows 80 chars — outer group breaks, inner pairs should stay together
+        let multi = r#"=LET(scale, DURATION, psus, FILTER(B3:B, B3:B <> ""), providers, H2:O2, VSTACK(psus))"#;
+        let formatted = prettify_formula(multi, &config).unwrap();
+        eprintln!("AOT multi-break:\n{}", formatted);
+        assert!(
+            formatted.contains("scale, DURATION"),
+            "binding pair should stay on one line in AOT, got:\n{}",
+            formatted
+        );
+    }
+
+    #[test]
     fn test_trailing_space_formatting() {
         let config = PrinterConfig::new(80, 2);
         let without_space = r#"=LET(raw, A2:E1000, filtered, FILTER(raw, (INDEX(raw,,3)>100)*(INDEX(raw,,5)="Active")), sorted, SORT(filtered, 3, FALSE), IF(ROWS(sorted)>0, MAP(SEQUENCE(MIN(10, ROWS(sorted))), LAMBDA(i, INDEX(sorted, i, 1)&" - "&TEXT(INDEX(sorted, i, 3), "$#,##0"))), "No results"))"#;

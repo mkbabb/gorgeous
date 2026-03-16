@@ -203,12 +203,16 @@ fn combine_docs<'a>(docs: Vec<Doc<'a>>, hints: Option<&PrettyHints>, input: &'a 
         }
 
         // Handle sep("...") — custom separator.
-        // Use SmartJoin when in a group context so items fill lines naturally
-        // (e.g., LET name-value pairs stay together on the same line when they fit).
         if let Some(ref sep_str) = hints.sep {
-            if hints.group {
+            if hints.hardbreak || hints.block {
+                // Non-filling: each item on its own line with trimmed separator.
+                // e.g., LET args: `scale, DURATION,\n  psus, FILTER(...),`
+                let trimmed = sep_str.trim_end().to_string();
+                let separator = Doc::String(Cow::Owned(trimmed)) + Doc::Hardline;
+                return Doc::Join(Box::new((separator, docs)));
+            } else if hints.group {
                 // SmartJoin fills lines: keeps short adjacent items together
-                // (e.g., LET name-value pairs on the same line when they fit).
+                // (e.g., function args on the same line when they fit).
                 // IfBreak(trimmed, full) — SmartJoin's break_left handles the
                 // actual line break; no Hardline in the separator.
                 let trimmed = sep_str.trim_end().to_string();
