@@ -92,13 +92,13 @@ fn value_to_doc<'a>(ir: &'a GrammarIR, value: &Value, input: &'a str) -> Option<
             // The @pretty sep(", ") needs to see each binding as a sibling, not wrapped in an Array.
             let child_docs = if hints.is_some() {
                 let mut flat = Vec::with_capacity(child_docs.len());
-                for (i, child) in children.iter().enumerate() {
+                for child in children.iter() {
                     match child {
                         Value::Array(items) if items.len() > 1 => {
                             flat.extend(items.iter().filter_map(|v| value_to_doc(ir, v, input)));
                         }
                         _ => {
-                            if let Some(d) = child_docs.get(i).and_then(|_| value_to_doc(ir, child, input)) {
+                            if let Some(d) = value_to_doc(ir, child, input) {
                                 flat.push(d);
                             }
                         }
@@ -116,7 +116,10 @@ fn value_to_doc<'a>(ir: &'a GrammarIR, value: &Value, input: &'a str) -> Option<
             if let Some(h) = hints {
                 if h.group && h.indent && children.len() >= 2 && child_docs.len() >= 2 {
                     let last_is_close = match children.last() {
-                        Some(Value::Span(s, e)) => (*e - *s) <= 2,
+                        Some(Value::Span(s, e)) => {
+                            let text = &input[*s as usize..*e as usize];
+                            matches!(text, ")" | "}" | "]" | ">")
+                        }
                         _ => false,
                     };
                     if last_is_close {
@@ -197,6 +200,11 @@ fn children_span_range(children: &[Value]) -> Option<(u32, u32)> {
 /// Combine multiple child docs using PrettyHints.
 fn combine_docs<'a>(docs: Vec<Doc<'a>>, hints: Option<&PrettyHints>, input: &'a str) -> Doc<'a> {
     if let Some(hints) = hints {
+        // Check `off` before anything else — it suppresses all formatting.
+        if hints.off {
+            return Doc::Concat(docs);
+        }
+
         // Handle split("...") — format-time balanced splitting for opaque spans.
         if let Some(ref split_delim) = hints.split {
             return combine_with_split(docs, split_delim, hints, input);
