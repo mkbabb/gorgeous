@@ -228,6 +228,46 @@ fn bench_json_canada_cached(b: &mut Bencher) {
 
 // ── CSS phase-split benchmarks (parse vs to_doc vs render) ──────────────────
 
+fn bench_css_normalize_parse_only(b: &mut Bencher) {
+    let input = load_css_normalize();
+    let parser = CssParser::stylesheet();
+    let (result, state) = parser.parse_return_state(&input);
+    assert!(result.is_some(), "CSS normalize parse failed");
+    let pct = state.offset * 100 / input.len().max(1);
+    if pct < 95 {
+        eprintln!(
+            "  NOTE: normalize parse consumed {pct}% \
+             (L1 opaque spans — throughput is span-scan speed)"
+        );
+    }
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        parser.parse(&input).unwrap()
+    });
+}
+
+fn bench_css_normalize_to_doc_only(b: &mut Bencher) {
+    let input = load_css_normalize();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        ast.to_doc()
+    });
+}
+
+fn bench_css_normalize_render_only(b: &mut Bencher) {
+    let input = load_css_normalize();
+    let config = PrinterConfig::default();
+    let parser = CssParser::stylesheet();
+    let ast = parser.parse(&input).unwrap();
+    let doc = ast.to_doc();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        pprint_ref(&doc, config.to_printer())
+    });
+}
+
 fn bench_css_app_parse_only(b: &mut Bencher) {
     let input = load_css_app();
     let parser = CssParser::stylesheet();
@@ -546,6 +586,22 @@ fn bench_gs_10kb_cached(b: &mut Bencher) {
 
 // ── Google Sheets phase-split benchmarks ────────────────────────────────────
 
+fn bench_gs_simple_parse_only(b: &mut Bencher) {
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = GS_SIMPLE.len() as u64;
+    b.iter(|| {
+        parser.parse(GS_SIMPLE).unwrap()
+    });
+}
+
+fn bench_gs_let_parse_only(b: &mut Bencher) {
+    let parser = GoogleSheetsParser::formula();
+    b.bytes = GS_LET.len() as u64;
+    b.iter(|| {
+        parser.parse(GS_LET).unwrap()
+    });
+}
+
 fn bench_gs_pathological_parse_only(b: &mut Bencher) {
     let parser = GoogleSheetsParser::formula();
     b.bytes = GS_PATHOLOGICAL.len() as u64;
@@ -672,6 +728,9 @@ benchmark_group!(
 
 benchmark_group!(
     css_phase_benches,
+    bench_css_normalize_parse_only,
+    bench_css_normalize_to_doc_only,
+    bench_css_normalize_render_only,
     bench_css_app_parse_only,
     bench_css_app_to_doc_only,
     bench_css_app_render_only,
@@ -718,6 +777,8 @@ benchmark_group!(
 
 benchmark_group!(
     gs_phase_benches,
+    bench_gs_simple_parse_only,
+    bench_gs_let_parse_only,
     bench_gs_pathological_parse_only,
     bench_gs_pathological_to_doc_only,
     bench_gs_pathological_render_only,
