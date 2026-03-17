@@ -31,9 +31,9 @@ gorgeous is fast. The combination of parse_that's high-throughput parser combina
 
 | File | Size | gorgeous | Biome | Speedup |
 |------|------|----------|-------|---------|
-| app.css | 6 KB | 50 MB/s | 11 MB/s | 4.5x |
-| bootstrap.css | 281 KB | 290 MB/s | 17 MB/s | **17x** |
-| tailwind.css | 3.8 MB | 36 MB/s | 8 MB/s | 4.5x |
+| app.css | 6 KB | 54 MB/s | 10 MB/s | 5.4x |
+| bootstrap.css | 281 KB | 415 MB/s | 16 MB/s | **25.9x** |
+| tailwind.css | 3.8 MB | 45 MB/s | 14 MB/s | 3.2x |
 
 **JSON formatting:** 115 MB/s (cached), competitive with serde-based formatters.
 
