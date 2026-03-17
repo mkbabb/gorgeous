@@ -8,7 +8,9 @@ CLI with built-in languages + JIT compilation from arbitrary `.bbnf` grammars.
 ```
 src/
   lib.rs               # PrinterConfig, ToDoc + SourceRange traits, range_to_doc()
-  main.rs              # CLI binary — built-in languages + JIT grammar pipeline
+  main.rs              # CLI binary — argument parsing, orchestration
+  builtin.rs           # Language detection + built-in formatter dispatch
+  jit.rs               # JIT grammar pipeline (extract, hash, cache, compile, run)
   json.rs              # JSON prettifier — 9 tests, range formatting
   ebnf.rs              # EBNF prettifier — 4 tests, idempotent multi-rule
   bnf.rs               # BNF prettifier — 5 tests, idempotent multi-rule
