@@ -9,6 +9,7 @@ pub mod bbnf;
 pub mod ebnf;
 pub mod bnf;
 pub mod css;
+pub mod css_fast;
 pub mod google_sheets;
 
 #[cfg(feature = "vm")]

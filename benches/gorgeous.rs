@@ -4,6 +4,7 @@ use bencher::{benchmark_group, benchmark_main, Bencher};
 use pprint::{pprint as render, pprint_ref};
 use gorgeous::json::prettify_json;
 use gorgeous::css::{prettify_css, CssParser};
+use gorgeous::css_fast::CssFastParser;
 use gorgeous::google_sheets::{prettify_formula, GoogleSheetsParser};
 use gorgeous::{PrinterConfig, ToDoc};
 
@@ -692,6 +693,211 @@ fn bench_gs_10kb_render_only(b: &mut Bencher) {
     });
 }
 
+// ── CSS parse-only comparison (BBNF fast vs cssparser vs BBNF pretty vs lightningcss) ──
+
+// --- Tier 1: Structural scan (opaque spans / tokenizer) ---
+
+// cssparser: minimal visitor that counts rules and declarations (L0–L1 work)
+mod cssparser_visitor {
+    use cssparser::{
+        AtRuleParser, CowRcStr, DeclarationParser, ParseError, Parser, ParserInput,
+        QualifiedRuleParser, RuleBodyItemParser, StyleSheetParser,
+    };
+
+    pub struct RuleCounter {
+        pub rule_count: usize,
+        pub decl_count: usize,
+    }
+
+    impl<'i> QualifiedRuleParser<'i> for RuleCounter {
+        type Prelude = ();
+        type QualifiedRule = ();
+        type Error = ();
+
+        fn parse_prelude<'t>(
+            &mut self,
+            input: &mut Parser<'i, 't>,
+        ) -> Result<Self::Prelude, ParseError<'i, ()>> {
+            while input.next().is_ok() {}
+            Ok(())
+        }
+
+        fn parse_block<'t>(
+            &mut self,
+            _prelude: Self::Prelude,
+            _start: &cssparser::ParserState,
+            input: &mut Parser<'i, 't>,
+        ) -> Result<Self::QualifiedRule, ParseError<'i, ()>> {
+            self.rule_count += 1;
+            while input.next().is_ok() {}
+            Ok(())
+        }
+    }
+
+    impl<'i> AtRuleParser<'i> for RuleCounter {
+        type Prelude = ();
+        type AtRule = ();
+        type Error = ();
+
+        fn parse_prelude<'t>(
+            &mut self,
+            _name: CowRcStr<'i>,
+            input: &mut Parser<'i, 't>,
+        ) -> Result<Self::Prelude, ParseError<'i, ()>> {
+            while input.next().is_ok() {}
+            Ok(())
+        }
+
+        fn parse_block<'t>(
+            &mut self,
+            _prelude: Self::Prelude,
+            _start: &cssparser::ParserState,
+            input: &mut Parser<'i, 't>,
+        ) -> Result<Self::AtRule, ParseError<'i, ()>> {
+            self.rule_count += 1;
+            while input.next().is_ok() {}
+            Ok(())
+        }
+
+        fn rule_without_block(
+            &mut self,
+            _prelude: Self::Prelude,
+            _start: &cssparser::ParserState,
+        ) -> Result<Self::AtRule, ()> {
+            self.rule_count += 1;
+            Ok(())
+        }
+    }
+
+    impl<'i> DeclarationParser<'i> for RuleCounter {
+        type Declaration = ();
+        type Error = ();
+
+        fn parse_value<'t>(
+            &mut self,
+            _name: CowRcStr<'i>,
+            input: &mut Parser<'i, 't>,
+        ) -> Result<Self::Declaration, ParseError<'i, ()>> {
+            self.decl_count += 1;
+            while input.next().is_ok() {}
+            Ok(())
+        }
+    }
+
+    impl<'i> RuleBodyItemParser<'i, (), ()> for RuleCounter {
+        fn parse_qualified(&self) -> bool {
+            true
+        }
+        fn parse_declarations(&self) -> bool {
+            false
+        }
+    }
+
+    pub fn parse_css(data: &str) -> (usize, usize) {
+        let mut input = ParserInput::new(data);
+        let mut parser = Parser::new(&mut input);
+        let mut counter = RuleCounter {
+            rule_count: 0,
+            decl_count: 0,
+        };
+        let rule_parser = StyleSheetParser::new(&mut parser, &mut counter);
+        for result in rule_parser {
+            let _ = bencher::black_box(result);
+        }
+        (counter.rule_count, counter.decl_count)
+    }
+}
+
+// BBNF fast parse-only
+
+fn bench_bbnf_fast_parse_normalize(b: &mut Bencher) {
+    let input = load_css_normalize();
+    let parser = CssFastParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| parser.parse(&input).unwrap());
+}
+
+fn bench_bbnf_fast_parse_bootstrap(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let parser = CssFastParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| parser.parse(&input).unwrap());
+}
+
+fn bench_bbnf_fast_parse_tailwind(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let parser = CssFastParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| parser.parse(&input).unwrap());
+}
+
+// cssparser parse-only
+
+fn bench_cssparser_parse_normalize(b: &mut Bencher) {
+    let input = load_css_normalize();
+    b.bytes = input.len() as u64;
+    b.iter(|| bencher::black_box(cssparser_visitor::parse_css(&input)));
+}
+
+fn bench_cssparser_parse_bootstrap(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| bencher::black_box(cssparser_visitor::parse_css(&input)));
+}
+
+fn bench_cssparser_parse_tailwind(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    b.bytes = input.len() as u64;
+    b.iter(|| bencher::black_box(cssparser_visitor::parse_css(&input)));
+}
+
+// --- Tier 2: Structural AST (BBNF pretty vs lightningcss) ---
+
+// BBNF pretty parse-only (reuses existing CssParser, aliases for grouping)
+
+fn bench_bbnf_pretty_parse_normalize(b: &mut Bencher) {
+    let input = load_css_normalize();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| parser.parse(&input).unwrap());
+}
+
+fn bench_bbnf_pretty_parse_bootstrap(b: &mut Bencher) {
+    let input = load_css_bootstrap();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| parser.parse(&input).unwrap());
+}
+
+fn bench_bbnf_pretty_parse_tailwind(b: &mut Bencher) {
+    let input = load_css_tailwind();
+    let parser = CssParser::stylesheet();
+    b.bytes = input.len() as u64;
+    b.iter(|| parser.parse(&input).unwrap());
+}
+
+// lightningcss parse-only (L2 semantic parse — typed properties, vendor analysis)
+
+fn bench_lightningcss_parse_normalize(b: &mut Bencher) {
+    use lightningcss::stylesheet::{ParserOptions, StyleSheet};
+    let input = load_css_normalize();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        bencher::black_box(StyleSheet::parse(&input, ParserOptions::default()).unwrap())
+    });
+}
+
+fn bench_lightningcss_parse_bootstrap(b: &mut Bencher) {
+    use lightningcss::stylesheet::{ParserOptions, StyleSheet};
+    let input = load_css_bootstrap();
+    b.bytes = input.len() as u64;
+    b.iter(|| {
+        bencher::black_box(StyleSheet::parse(&input, ParserOptions::default()).unwrap())
+    });
+}
+
+// lightningcss errors on synthetic tailwind — omitted
+
 // ── Groups ───────────────────────────────────────────────────────────────────
 
 benchmark_group!(
@@ -750,6 +956,23 @@ benchmark_group!(
 );
 
 benchmark_group!(
+    css_parse_comparison,
+    // Tier 1: structural scan (opaque spans vs tokenizer)
+    bench_bbnf_fast_parse_normalize,
+    bench_bbnf_fast_parse_bootstrap,
+    bench_bbnf_fast_parse_tailwind,
+    bench_cssparser_parse_normalize,
+    bench_cssparser_parse_bootstrap,
+    bench_cssparser_parse_tailwind,
+    // Tier 2: structural AST (typed tree vs semantic parse)
+    bench_bbnf_pretty_parse_normalize,
+    bench_bbnf_pretty_parse_bootstrap,
+    bench_bbnf_pretty_parse_tailwind,
+    bench_lightningcss_parse_normalize,
+    bench_lightningcss_parse_bootstrap,
+);
+
+benchmark_group!(
     json_phase_benches,
     bench_json_data_parse_only,
     bench_json_data_to_doc_only,
@@ -790,5 +1013,5 @@ benchmark_group!(
     bench_gs_10kb_render_only,
 );
 
-benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, biome_benches, json_phase_benches, gs_benches, gs_cached_benches, gs_phase_benches);
+benchmark_main!(json_benches, json_cached_benches, css_benches, css_cached_benches, css_phase_benches, biome_benches, css_parse_comparison, json_phase_benches, gs_benches, gs_cached_benches, gs_phase_benches);
 
