@@ -19,13 +19,13 @@ gorgeous includes six pre-built formatters, each generated from a BBNF grammar:
 | **BNF** | `prettify_bnf()` | Standard Backus-Naur Form |
 | **EBNF** | `prettify_ebnf()` | Extended BNF (ISO 14977) |
 | **BBNF** | `prettify_bbnf()` | BBNF grammar files themselves |
-| **Google Sheets** | `prettify_google_sheets()` | Google Sheets formula language |
+| **Google Sheets** | `prettify_formula()` | Google Sheets formula language |
 
-Every formatter is purely grammar-driven with zero manual overrides. The `@pretty` directives in the grammar control all layout decisions: `group`, `indent`, `sep("...")`, `split("...")`.
+Formatters are grammar-driven: `@pretty` directives in the grammar control layout decisions (`group`, `indent`, `sep("...")`, `split("...")`). The one runtime helper is `split_balanced()`, used by `split("...")` to handle format-time splitting of opaque spans like CSS selector lists.
 
 ## Performance
 
-gorgeous is fast. The combination of parse_that's high-throughput parser combinators and pprint's stack-based renderer produces output at hundreds of megabytes per second.
+End-to-end throughput ranges from 26 MB/s (canada.json, 2.2 MB) to 415 MB/s (bootstrap.css, 281 KB). The combination of parse_that's parser combinators and pprint's stack-based renderer keeps overhead low across file sizes.
 
 **CSS formatting (gorgeous vs Biome):**
 
@@ -35,7 +35,7 @@ gorgeous is fast. The combination of parse_that's high-throughput parser combina
 | bootstrap.css | 281 KB | 415 MB/s | 16 MB/s | **25.9x** |
 | tailwind.css | 3.8 MB | 45 MB/s | 14 MB/s | 3.2x |
 
-**JSON formatting:** 115 MB/s (cached), competitive with serde-based formatters.
+**JSON formatting:** 115 MB/s (cached, 35 KB file); 26 MB/s on canada.json (2.2 MB).
 
 **Internal pipeline throughput** on bootstrap.css: `to_doc` at 1,038 MB/s, `render` at 1,140 MB/s.
 
@@ -111,4 +111,4 @@ The gorgeous pipeline for each language:
 2. **to_doc** — BBNF-derived codegen transforms each AST node into a pprint `Doc` tree, applying `@pretty` directives (`group`, `indent`, `sep`, `split`)
 3. **Render** — pprint's `pprint()` function traverses the `Doc` tree and produces the formatted string, breaking lines when Groups exceed `max_width`
 
-The `@pretty split(",")` directive deserves special mention: it enables grammar-driven format-time splitting of opaque spans (like CSS selector lists) using `split_balanced()` from parse_that, which respects parenthesis/bracket nesting and string quoting. This eliminated the last manual formatting override in the CSS formatter.
+The `@pretty split(",")` directive enables grammar-driven format-time splitting of opaque spans (like CSS selector lists) using `split_balanced()` from parse_that, which respects parenthesis/bracket nesting and string quoting.

@@ -29,13 +29,13 @@ let formatted = prettify_json_range(input, 100..200, &config);
 | Language | Tests | Grammar source | Entry point |
 |----------|------:|----------------|-------------|
 | JSON | 9 | `json.bbnf` | `prettify_json()` |
-| CSS | 8 | `css-stylesheet-pretty.bbnf` | `prettify_css()` |
+| CSS | 10 | `css-stylesheet-pretty.bbnf` | `prettify_css()` |
 | EBNF | 4 | `ebnf.bbnf` | `prettify_ebnf()` |
 | BNF | 5 | `bnf.bbnf` | `prettify_bnf()` |
 | BBNF | 5 | `bbnf.bbnf` | `prettify_bbnf()` |
-| Google Sheets | 6 | `google-sheets.bbnf` | `prettify_formula()` |
+| Google Sheets | 8 | `google-sheets.bbnf` | `prettify_formula()` |
 
-All 37 tests pass. Idempotency verified: `prettify(prettify(x)) == prettify(x)`.
+Idempotency (`prettify(prettify(x)) == prettify(x)`) is the target for every formatter. JSON, BNF, EBNF, BBNF, and Google Sheets pass all tests; CSS has 4 remaining failures under active work.
 
 ## CLI
 
@@ -91,7 +91,8 @@ verbatim source text, nodes inside emit formatted `Doc` trees.
 
 ## Performance
 
-End-to-end cached throughput (parse + to_doc + render):
+End-to-end cached throughput (parse + to_doc + render).
+Measured with `bencher` on an Apple M4 Max, Rust nightly, `--release` with LTO:
 
 | Benchmark | Gorgeous | Biome | Speedup |
 |-----------|----------|-------|---------|

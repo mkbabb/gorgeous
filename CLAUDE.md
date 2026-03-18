@@ -23,7 +23,7 @@ tests/
   biome_compare2.rs    # Output size ratio tests across files
 examples/              # Example usage
 benches/
-  gorgeous.rs          # 51 benchmarks: JSON + CSS + GS + biome, phase splits
+  gorgeous.rs          # Formatting benchmarks: JSON + CSS + GS + biome, phase splits (parse comparison moved to bbnf-lang)
 data/json/             # benchmark datasets (data.json 35KB, canada.json 2.2MB)
 data/css/              # benchmark datasets (normalize 1.8KB, app 6.3KB, bootstrap 281KB, tailwind 3.8MB)
 ```
