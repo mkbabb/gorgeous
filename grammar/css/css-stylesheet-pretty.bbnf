@@ -1,42 +1,41 @@
 // CSS Stylesheet Grammar — Prettifier edition
 // Models CSS nesting (CSS Nesting Module Level 1) to create structural AST.
 // Treats selectors and values as opaque spans for formatting.
+//
+// Uses explicit `ws` (comment-aware whitespace) instead of `?w` (which only
+// trims \s) so inline comments like `/* 1 */` are consumed correctly.
 
-// Comments + whitespace — monolithic byte scanner (memchr for */)
-ws = /(?s)(?:\s|\/\*.*?\*\/)*/  ;
+// Comments + whitespace — single regex hits sp_css_ws_comment() SIMD fast path
+ws = /(?s)(?:\s|\/\*.*?\*\/)*/ ;
 
 // Opaque tokens
 selectorSpan = /[^{};]+[^\s{};]/ | /[^{};]/ ;
 valueSpan    = /[^;{}!,]+/ ;
 
 // Declarations
-propertyName = /[a-zA-Z_][\w-]*|--[\w-]+|-[a-zA-Z][\w-]*/ ;
-important    = "!" ?w , "important" ;
+propertyName = /[a-zA-Z_][\w-]*/ | /--[\w-]+/ | /-[a-zA-Z][\w-]*/ ;
+important    = "!" , ws , "important" ;
 optSemicolon = ";" ? ;
-// Group property+colon and value+semicolon as separate units so the
-// @pretty separator inserts space only at the colon-value boundary.
-declProperty = propertyName ?w , ":" ;
-valueList    = valueSpan , ("," ?w , valueSpan) * ;
-declValue    = valueList ? , important ? , optSemicolon ;
-declaration  = declProperty ?w , declValue ?w ;
+declaration  = propertyName , ws , ":" , ws , (valueSpan , ("," , ws , valueSpan) *) ? ,
+               important ? , optSemicolon , ws ;
 
 @recover declaration /[^;{}]+;/ ;
 
 // Block contents: declarations and nested rules (CSS Nesting Level 1)
 // This creates the structural cycle: blockContent → ruleItem → ... → ruleBlock → blockContent
-blockContent = (ws , (declaration | ruleItem) ?w) * ;
-ruleBlock    = "{" ?w >> blockContent ?w << "}" ;
+blockContent = (ws , (declaration | ruleItem)) * ;
+ruleBlock    = "{" , ws , blockContent , ws , "}" ;
 
 // Qualified rules
-qualifiedRule = selectorSpan ?w , ruleBlock ;
+qualifiedRule = selectorSpan , ws , ruleBlock ;
 
 @recover qualifiedRule /[^}]+}/ ;
 
 // At-rules
 mediaRule      = "@media" , /[^{]+/ , ruleBlock ;
 supportsRule   = "@supports" , /[^{]+/ , ruleBlock ;
-fontFaceRule   = "@font-face" ?w , ruleBlock ;
-importRule     = "@import" , valueSpan , ("," ?w , valueSpan) * , ";" ;
+fontFaceRule   = "@font-face" , ws , ruleBlock ;
+importRule     = "@import" , valueSpan , ("," , ws , valueSpan) * , ";" ;
 atRuleBody     = ruleBlock | ";" ;
 genericAtRule  = /@[a-zA-Z][\w-]*/ , /[^;{}]*/ , atRuleBody ;
 
@@ -48,16 +47,14 @@ atRule = mediaRule | supportsRule | fontFaceRule | importRule | genericAtRule ;
 ruleItem = qualifiedRule | atRule ;
 
 // Rule list (top-level)
-ruleList   = (ws , ruleItem ?w) * ;
+ruleList   = (ws , ruleItem) * ;
 
 // Entry point
 stylesheet = ws , ruleList , ws ;
 
 @pretty stylesheet block ;
-@pretty ruleList blankline ;
+@pretty ruleList block ;
 @pretty blockContent block indent ;
-@pretty ruleBlock off ;
-@pretty selectorSpan split(",") group sep(", ") ;
-@pretty qualifiedRule nobreak ;
+@pretty qualifiedRule group indent ;
 @pretty declaration group ;
-@pretty atRule group nobreak ;
+@pretty atRule group indent ;

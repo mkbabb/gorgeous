@@ -1,25 +1,24 @@
 // CSS Fast Grammar — streamlined for throughput.
-// vs css-stylesheet-pretty.bbnf:
-//   - ws is pure whitespace regex (no comment parsing)
-//   - No @recover directives
-//   - Single unified atRule pattern (no multi-variant dispatch)
+// Opaque spans (no typed values/selectors).
+// Handles comments, empty values, real-world CSS.
+//
+// Uses explicit `ws` (comment-aware whitespace) instead of `?w` (which only
+// trims \s) so inline comments like `/* 1 */` are consumed correctly.
 
-ws = /\s*/ ;
+ws = /(?s)(?:\s|\/\*.*?\*\/)*/ ;
 
 selectorSpan = /[^{};]+/ ;
-valueSpan    = /[^;{}!,]+/ ;
+valueSpan    = /[^;{}!]*/ ;
 
 propertyName = /[a-zA-Z_][\w-]*/ | /--[\w-]+/ | /-[a-zA-Z][\w-]*/ ;
-important    = "!" ?w , "important" ;
+important    = "!" , ws , "important" ;
 optSemicolon = ";" ? ;
-declProperty = propertyName ?w , ":" ;
-declValue    = valueSpan , ("," ?w , valueSpan) * , important ? , optSemicolon ;
-declaration  = declProperty ?w , declValue ?w ;
+declaration  = propertyName , ws , ":" , ws , valueSpan , important ? , optSemicolon , ws ;
 
-blockContent = (ws , (declaration | ruleItem) ?w) * ;
-ruleBlock    = "{" ?w , blockContent ?w , "}" ;
+blockContent = (ws , (declaration | ruleItem)) * ;
+ruleBlock    = "{" , ws , blockContent , ws , "}" ;
 
-qualifiedRule = selectorSpan ?w , ruleBlock ;
+qualifiedRule = selectorSpan , ws , ruleBlock ;
 
 atRuleBody     = ruleBlock | ";" ;
 genericAtRule  = /@[a-zA-Z][\w-]*/ , /[^;{}]*/ , atRuleBody ;
@@ -27,8 +26,8 @@ genericAtRule  = /@[a-zA-Z][\w-]*/ , /[^;{}]*/ , atRuleBody ;
 atRule = genericAtRule ;
 
 ruleItem = qualifiedRule | atRule ;
-ruleList = (ws , ruleItem ?w) * ;
-stylesheet = ws , ruleList ?w ;
+ruleList = (ws , ruleItem) * ;
+stylesheet = ws , ruleList , ws ;
 
 @pretty stylesheet block ;
 @pretty ruleList blankline ;
